@@ -1,0 +1,52 @@
+services:
+  mariadb:
+    image: mariadb:12.1.2
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+      MARIADB_DATABASE: ${DB_NAME:-matchday}
+      MARIADB_USER: ${DB_USER:-matchday}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  phpmyadmin:
+    image: phpmyadmin:5.2.3
+    profiles: ["tools"]
+    environment:
+      PMA_HOST: mariadb
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  mariadb-test:
+    image: mariadb:12.1.2
+    profiles: ["test"]
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      MARIADB_DATABASE: matchday_test
+      MARIADB_USER: matchday_test
+      # Public fixture for the disposable local test database only.
+      MARIADB_PASSWORD: local-test-only-password
+    ports:
+      - "127.0.0.1:3307:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  mariadb_data:
