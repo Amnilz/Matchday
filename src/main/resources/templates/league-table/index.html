@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('League Table')}">
+    <title>League Table</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-3 flex-wrap">
+        <div>
+            <h2 class="mb-0"><i class="bi bi-table text-danger me-2"></i>League Table</h2>
+            <p th:if="${league != null}" class="text-muted mb-0" th:text="${league.name}">League</p>
+        </div>
+        <form th:if="${leagues != null and !leagues.isEmpty()}" th:action="@{/league-table}" method="get" class="d-flex gap-2 align-items-center">
+            <label for="leagueId" class="visually-hidden">League</label>
+            <select id="leagueId" name="leagueId" class="form-select form-select-sm" onchange="this.form.submit()"
+                    data-searchable-select
+                    data-search-placeholder="Search leagues...">
+                <option th:each="option : ${leagues}"
+                        th:value="${option.id}"
+                        th:selected="${selectedLeagueId != null and selectedLeagueId == option.id}"
+                        th:text="${option.name}">League</option>
+            </select>
+            <a th:if="${selectedLeagueId != null}"
+               th:href="@{/leagues/{id}(id=${selectedLeagueId}, returnUrl=${returnUrl})}"
+               class="btn btn-outline-secondary btn-sm text-nowrap">
+                <i class="bi bi-eye me-1"></i>View
+            </a>
+        </form>
+    </div>
+
+    <div th:if="${rows.isEmpty()}" class="alert alert-info">
+        No teams found.
+    </div>
+
+    <div th:unless="${rows.isEmpty()}" class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th class="text-center" style="width:56px">#</th>
+                    <th>Team</th>
+                    <th class="text-center">P</th>
+                    <th class="text-center">W</th>
+                    <th class="text-center">D</th>
+                    <th class="text-center">L</th>
+                    <th class="text-center">GF</th>
+                    <th class="text-center">GA</th>
+                    <th class="text-center">GD</th>
+                    <th class="text-center">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row, iter : ${rows}">
+                    <td class="text-center text-muted" th:text="${iter.index + 1}">1</td>
+                    <td class="fw-semibold">
+                        <th:block th:replace="~{shared/team-ui :: teamLink(${row.team()}, 28, false)}"></th:block>
+                    </td>
+                    <td class="text-center" th:text="${row.stats().played()}">0</td>
+                    <td class="text-center" th:text="${row.stats().wins()}">0</td>
+                    <td class="text-center" th:text="${row.stats().draws()}">0</td>
+                    <td class="text-center" th:text="${row.stats().losses()}">0</td>
+                    <td class="text-center" th:text="${row.stats().goalsFor()}">0</td>
+                    <td class="text-center" th:text="${row.stats().goalsAgainst()}">0</td>
+                    <td class="text-center" th:text="${row.stats().goalDifference()}">0</td>
+                    <td class="text-center fw-bold" th:text="${row.stats().points()}">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+</body>
+</html>

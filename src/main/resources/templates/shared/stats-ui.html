@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- STAT CARD fragment — a single labelled stat tile in a Bootstrap row.
+     colClass:  Bootstrap column classes, e.g. 'col' or 'col-6 col-md-3 col-xl'
+     cardClass: extra card modifier classes, e.g. '' | 'border-success' | 'bg-dark text-white'
+     textClass: extra value text classes, e.g. '' | 'text-success' | 'text-danger'
+     value:     the stat value (rendered via th:text)
+     label:     the stat description shown below the value
+     Note: when cardClass contains 'bg-dark', the label automatically uses 'small opacity-75'
+           instead of 'text-muted small' to stay readable on a dark background.
+     Usage: th:replace="~{shared/stats-ui :: statCard('col', 'border-success', 'text-success', ${stats.wins()}, 'W')}"
+            th:replace="~{shared/stats-ui :: statCard('col', 'bg-dark text-white', '', ${stats.points()}, 'Pts')}" -->
+<th:block th:fragment="statCard(colClass, cardClass, textClass, value, label)">
+    <div th:class="${colClass}">
+        <div th:class="'card py-2' + (${cardClass} != '' ? ' ' + ${cardClass} : '')">
+            <div th:class="'fw-bold fs-5' + (${textClass} != '' ? ' ' + ${textClass} : '')"
+                 th:text="${value}">0</div>
+            <div th:class="${cardClass != null and #strings.contains(cardClass, 'bg-dark')} ? 'small opacity-75' : 'text-muted small'"
+                 th:text="${label}">Label</div>
+        </div>
+    </div>
+</th:block>
+
+</body>
+</html>

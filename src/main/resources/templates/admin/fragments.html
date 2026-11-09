@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!-- FLASH MESSAGES fragment - success/error alerts from RedirectAttributes
+     Usage: th:replace="~{admin/fragments :: flashMessages}" -->
+<th:block th:fragment="flashMessages">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</th:block>
+
+<!-- ADMIN SECTION NAVIGATION fragment
+     Usage: th:replace="~{admin/fragments :: adminSectionNav('teams')}" -->
+<nav th:fragment="adminSectionNav(active)" class="nav nav-pills gap-2 mb-4" aria-label="Admin sections">
+    <a th:href="@{/admin/leagues}"
+       class="nav-link"
+       th:classappend="${active == 'leagues'} ? ' active' : ''">
+        <i class="bi bi-trophy-fill me-1"></i>Leagues
+    </a>
+    <a th:href="@{/admin/teams}"
+       class="nav-link"
+       th:classappend="${active == 'teams'} ? ' active' : ''">
+        <i class="bi bi-shield-fill me-1"></i>Teams
+    </a>
+    <a th:href="@{/admin/players}"
+       class="nav-link"
+       th:classappend="${active == 'players'} ? ' active' : ''">
+        <i class="bi bi-person-fill me-1"></i>Players
+    </a>
+    <a th:href="@{/admin/matches}"
+       class="nav-link"
+       th:classappend="${active == 'matches'} ? ' active' : ''">
+        <i class="bi bi-lightning-fill me-1"></i>Matches &amp; Events
+    </a>
+    <a th:href="@{/admin/users}"
+       class="nav-link"
+       th:classappend="${active == 'users'} ? ' active' : ''">
+        <i class="bi bi-people-fill me-1"></i>Users
+    </a>
+    <a th:href="@{/admin/comments}"
+       class="nav-link"
+       th:classappend="${active == 'comments'} ? ' active' : ''">
+        <i class="bi bi-chat-square-text-fill me-1"></i>Comments
+    </a>
+</nav>
+
+<!-- DELETE CONFIRMATION MODAL fragment
+     Trigger button must have: data-bs-toggle="modal" data-bs-target="#deleteModal"
+                               data-entity-id="${id}" data-entity-name="${name}"
+     The delete form POSTs to /admin/{section}/{id}/delete.
+     Usage: th:replace="~{admin/fragments :: deleteModal('Team')}" -->
+<th:block th:fragment="deleteModal(entityLabel)">
+    <div class="modal fade" id="deleteModal" tabindex="-1"
+         aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                        Delete <span th:text="${entityLabel}">Entity</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete
+                    <strong id="deleteEntityName"></strong>?
+                    This cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteForm" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <input type="hidden" id="deleteReturnUrl" name="returnUrl" value=""/>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
+            const btn = e.relatedTarget;
+            document.getElementById('deleteEntityName').textContent = btn.getAttribute('data-entity-name');
+            document.getElementById('deleteForm').action = btn.getAttribute('data-delete-url');
+            document.getElementById('deleteReturnUrl').value =
+                btn.getAttribute('data-return-url') || (window.location.pathname + window.location.search);
+        });
+    </script>
+</th:block>
+
+<!-- COMMENT MODERATION HIDDEN FIELDS fragment -->
+<th:block th:fragment="commentModerationFields(reportedOnly, page)">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <input type="hidden" name="reportedOnly" th:value="${reportedOnly}"/>
+    <input type="hidden" name="page" th:value="${page}"/>
+</th:block>
+
+
+<!-- WIKIPEDIA FETCH BUTTON fragment
+     Usage: th:replace="~{admin/fragments :: wikiFetchBtn(@{/admin/teams/fetch-logos}, 'Fetch missing logos', 'All logos fetched', ${missingLogoCount == 0})}" -->
+<th:block th:fragment="wikiFetchBtn(action, label, disabledLabel, disabled)">
+    <form method="post" th:action="${action}" class="mb-0">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit"
+                class="btn btn-outline-secondary btn-sm"
+                data-wiki-fetch-btn
+                th:attr="data-wiki-fetch-disabled=${disabled},
+                         title=${disabled ? 'Nothing missing right now' : null}"
+                th:disabled="${disabled}">
+            <span class="spinner-border spinner-border-sm me-1 d-none" data-wiki-spinner></span>
+            <i class="bi bi-wikipedia me-1" data-wiki-icon></i>
+            <span th:text="${disabled ? disabledLabel : label}">Fetch</span>
+        </button>
+    </form>
+</th:block>
+
+<!-- FORM SUBMIT / CANCEL BUTTONS fragment
+     createLabel:    button label when creating (editId == null)
+     saveLabel:      button label when editing  (editId != null)
+     cancelUrl:      resolved URL for the Cancel link (pass as @{/admin/...} at the call site)
+     btnClass:       Bootstrap button colour class, e.g. 'btn-warning'
+     containerClass: extra classes for the wrapper div, e.g. '' or 'p-4 pt-0'
+     Usage: th:replace="~{admin/fragments :: formButtons('Create League', 'Save Changes', @{/admin/leagues}, 'btn-warning', '')}" -->
+<div th:fragment="formButtons(createLabel, saveLabel, cancelUrl, btnClass, containerClass)"
+     th:class="'d-flex gap-2' + (${containerClass} != '' ? ' ' + ${containerClass} : '')">
+    <button type="submit" th:class="'btn ' + ${btnClass}">
+        <i class="bi bi-check-lg me-1"></i>
+        <span th:text="${editId == null} ? ${createLabel} : ${saveLabel}">Submit</span>
+    </button>
+    <a th:href="${cancelUrl}" class="btn btn-outline-secondary" data-guard-cancel>Cancel</a>
+</div>
+
+<!-- UNSAVED CHANGES GUARD MODAL fragment
+     Requires form-guard.js. Include in any page with a data-guard form.
+     Usage: th:replace="~{admin/fragments :: formGuardModal}" -->
+<th:block th:fragment="formGuardModal">
+    <div class="modal fade" id="formGuardModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Unsaved Changes
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    You have unsaved changes. If you leave now, they will be lost.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-pencil me-1"></i>Keep Editing
+                    </button>
+                    <button type="button" id="formGuardLeaveBtn" class="btn btn-danger">
+                        <i class="bi bi-box-arrow-right me-1"></i>Leave
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+</html>

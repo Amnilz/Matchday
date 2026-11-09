@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Moderate Comments')}">
+    <title>Moderate Comments</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/admin}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h2 class="mb-0"><i class="bi bi-chat-square-text-fill text-info me-2"></i>Moderate Comments</h2>
+        </div>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('comments')}"></th:block>
+
+    <th:block th:replace="~{admin/fragments :: flashMessages}"></th:block>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <a th:href="@{/admin/comments(reportedOnly=true)}"
+           class="btn btn-sm"
+           th:classappend="${reportedOnly} ? 'btn-warning' : 'btn-outline-warning'">
+            <i class="bi bi-flag-fill me-1"></i>Reported
+        </a>
+        <a th:href="@{/admin/comments(reportedOnly=false)}"
+           class="btn btn-sm"
+           th:classappend="${reportedOnly} ? 'btn-outline-secondary' : 'btn-secondary'">
+            <i class="bi bi-list-ul me-1"></i>All comments
+        </a>
+    </div>
+
+    <div th:if="${comments.isEmpty()}" class="alert alert-info">
+        <th:block th:if="${reportedOnly}">No reported comments right now.</th:block>
+        <th:block th:unless="${reportedOnly}">No comments yet.</th:block>
+    </div>
+
+    <div th:unless="${comments.isEmpty()}" class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Comment</th>
+                    <th class="d-none d-md-table-cell">Author</th>
+                    <th class="d-none d-lg-table-cell">Match</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-nowrap d-none d-lg-table-cell">Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="comment : ${comments}" th:id="${'comment-' + comment.id}">
+                    <td style="min-width: 280px;">
+                        <div class="fw-semibold" th:text="${comment.content}">Comment content</div>
+                        <div th:if="${comment.parentComment != null}" class="small text-muted mt-1">
+                            Reply to
+                            <span class="fw-semibold" th:text="${comment.parentComment.user.username}">user</span>:
+                            <span th:text="${#strings.abbreviate(comment.parentComment.content, 80)}">Parent content</span>
+                        </div>
+                    </td>
+                    <td class="d-none d-md-table-cell">
+                        <div class="fw-semibold" th:text="${comment.user.username}">username</div>
+                        <span th:if="${comment.user.blocked}" class="badge bg-danger">Blocked</span>
+                        <span th:unless="${comment.user.blocked}" class="badge bg-success">Active</span>
+                    </td>
+                    <td class="d-none d-lg-table-cell">
+                        <a th:href="@{/matches/{id}(id=${comment.match.id})}" class="text-decoration-none">
+                            <span th:text="${comment.match.homeTeam.name}">Home</span>
+                            <span class="text-muted">vs</span>
+                            <span th:text="${comment.match.awayTeam.name}">Away</span>
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-1 flex-wrap">
+                            <span th:if="${comment.reported}" class="badge bg-warning text-dark">Reported</span>
+                            <span th:if="${comment.deleted}" class="badge bg-secondary">Deleted</span>
+                            <span th:if="${!comment.deleted and comment.visible}" class="badge bg-success">Visible</span>
+                            <span th:if="${!comment.deleted and !comment.visible}" class="badge bg-dark">Hidden</span>
+                        </div>
+                    </td>
+                    <td class="text-nowrap text-muted small d-none d-lg-table-cell"
+                        th:text="${#temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm')}">date</td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-1 flex-wrap">
+                            <form th:if="${!comment.deleted and comment.visible}"
+                                  th:action="@{/admin/comments/{id}/hide(id=${comment.id})}" method="post" class="mb-0">
+                                <th:block th:replace="~{admin/fragments :: commentModerationFields(${reportedOnly}, ${comments.number})}"></th:block>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye-slash me-1"></i>Hide
+                                </button>
+                            </form>
+                            <form th:if="${!comment.deleted and !comment.visible}"
+                                  th:action="@{/admin/comments/{id}/show(id=${comment.id})}" method="post" class="mb-0">
+                                <th:block th:replace="~{admin/fragments :: commentModerationFields(${reportedOnly}, ${comments.number})}"></th:block>
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-eye me-1"></i>Show
+                                </button>
+                            </form>
+                            <form th:if="${comment.reported}"
+                                  th:action="@{/admin/comments/{id}/resolve(id=${comment.id})}" method="post" class="mb-0">
+                                <th:block th:replace="~{admin/fragments :: commentModerationFields(${reportedOnly}, ${comments.number})}"></th:block>
+                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-check2-circle me-1"></i>Resolve
+                                </button>
+                            </form>
+                            <form th:if="${!comment.deleted}"
+                                  th:id="${'admin-remove-comment-form-' + comment.id}"
+                                  th:action="@{/admin/comments/{id}/delete(id=${comment.id})}" method="post" class="mb-0">
+                                <th:block th:replace="~{admin/fragments :: commentModerationFields(${reportedOnly}, ${comments.number})}"></th:block>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmSubmitModal"
+                                        th:attr="data-confirm-form=${'admin-remove-comment-form-' + comment.id}"
+                                        data-confirm-title="Remove Comment"
+                                        data-confirm-message="Remove this comment?"
+                                        data-confirm-label="Remove"
+                                        data-confirm-button-class="btn-danger"
+                                        data-confirm-icon="bi bi-trash-fill text-danger me-2"
+                                        data-confirm-button-icon="bi bi-trash me-1">
+                                    <i class="bi bi-trash me-1"></i>Remove
+                                </button>
+                            </form>
+                            <form th:if="${!comment.user.blocked and !comment.user.roles.contains(adminRole)}"
+                                  th:id="${'admin-block-author-form-' + comment.id}"
+                                  th:action="@{/admin/comments/{id}/block-author(id=${comment.id})}" method="post" class="mb-0">
+                                <th:block th:replace="~{admin/fragments :: commentModerationFields(${reportedOnly}, ${comments.number})}"></th:block>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmSubmitModal"
+                                        th:attr="data-confirm-form=${'admin-block-author-form-' + comment.id},
+                                                 data-confirm-message=${'Block ' + comment.user.username + ' from commenting?'}"
+                                        data-confirm-title="Block User"
+                                        data-confirm-label="Block"
+                                        data-confirm-button-class="btn-danger"
+                                        data-confirm-icon="bi bi-person-x-fill text-danger me-2"
+                                        data-confirm-button-icon="bi bi-person-x me-1">
+                                    <i class="bi bi-person-x me-1"></i>Block
+                                </button>
+                            </form>
+                            <form th:if="${comment.user.blocked}"
+                                  th:action="@{/admin/comments/{id}/unblock-author(id=${comment.id})}" method="post" class="mb-0">
+                                <th:block th:replace="~{admin/fragments :: commentModerationFields(${reportedOnly}, ${comments.number})}"></th:block>
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-person-check me-1"></i>Unblock
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <th:block th:replace="~{shared/pagination :: pagination(${comments}, @{/admin/comments(reportedOnly=${reportedOnly})})}"></th:block>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+</body>
+</html>

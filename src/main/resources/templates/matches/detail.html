@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/fragments :: head('Match Details')}">
+    <title>Match</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="${backUrl}" th:text="${backLabel}">Matches</a></li>
+            <li class="breadcrumb-item active">
+                <span th:text="${match.homeTeam.name}">Home</span>
+                <span> vs </span>
+                <span th:text="${match.awayTeam.name}">Away</span>
+            </li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h2 class="mb-2">
+                <span th:text="${match.homeTeam.name}">Home</span>
+                <span class="text-muted mx-2">vs</span>
+                <span th:text="${match.awayTeam.name}">Away</span>
+            </h2>
+            <div class="text-muted">
+                <i class="bi bi-calendar3 me-1"></i>
+                <span th:text="${#temporals.format(match.matchDate, 'dd/MM/yyyy')}">Date</span>
+                <span th:if="${match.league != null}" class="mx-2">·</span>
+                <a th:if="${match.league != null}"
+                   th:href="@{/leagues/{id}(id=${match.league.id})}"
+                   class="text-decoration-none"
+                   th:text="${match.league.name}">League</a>
+            </div>
+        </div>
+        <div>
+            <th:block th:replace="~{shared/match-ui :: matchStatus(${match.status})}"></th:block>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4 align-items-stretch text-center">
+        <div class="col-md-5">
+            <a th:href="@{/teams/{id}(id=${match.homeTeam.id}, returnUrl=${returnUrl})}"
+               class="card h-100 shadow-sm text-decoration-none text-dark">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
+                    <div class="h5 mb-0">
+                        <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${match.homeTeam}, 64)}"></th:block>
+                    </div>
+                    <div class="text-muted small">Home</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-2">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    <div class="display-6 text-nowrap">
+                        <th:block th:replace="~{shared/match-ui :: matchScore(${match})}"></th:block>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <a th:href="@{/teams/{id}(id=${match.awayTeam.id}, returnUrl=${returnUrl})}"
+               class="card h-100 shadow-sm text-decoration-none text-dark">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
+                    <div class="h5 mb-0">
+                        <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${match.awayTeam}, 64)}"></th:block>
+                    </div>
+                    <div class="text-muted small">Away</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${showEvents}" class="card shadow-sm">
+        <div class="card-header app-card-header">
+            <i class="bi bi-lightning-fill me-1"></i>Events
+        </div>
+
+        <div th:if="${events.isEmpty()}" class="card-body text-muted">
+            No match events recorded.
+        </div>
+
+        <div th:unless="${events.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center">Min</th>
+                        <th>Event</th>
+                        <th>Player</th>
+                        <th>Team</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="event : ${events}">
+                        <td class="text-center text-muted">
+                            <span th:if="${event.minute != null}">
+                                <span th:text="${event.minute}">0</span><span>'</span>
+                            </span>
+                            <span th:unless="${event.minute != null}">-</span>
+                        </td>
+                        <td>
+                            <th:block th:replace="~{shared/match-ui :: matchEventIcon(${event.type})}"></th:block>
+                        </td>
+                        <td>
+                            <a th:href="@{/players/{id}(id=${event.player.id}, returnUrl=${returnUrl})}"
+                               class="fw-semibold text-decoration-none"
+                               th:text="${event.player.fullName}">Player</a>
+                        </td>
+                        <td>
+                            <th:block th:replace="~{shared/team-ui :: teamLogoOrNameLink(${event.player.team}, 24)}"></th:block>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <section id="comments" class="mt-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h5 mb-0"><i class="bi bi-chat-left-text-fill text-success me-2"></i>Comments</h3>
+            <span class="badge bg-secondary" th:text="${commentCount}">0</span>
+        </div>
+
+        <div th:replace="~{shared/alerts :: flashAlert('success', ${commentSuccess})}"></div>
+        <div th:replace="~{shared/alerts :: flashAlert('warning', ${commentError})}"></div>
+
+        <div sec:authorize="isAuthenticated()" class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div th:if="${userBlockedFromComments}" class="alert alert-warning mb-0">
+                    Your account is blocked from posting comments.
+                </div>
+
+                <form th:unless="${userBlockedFromComments}"
+                      th:action="@{/comments/matches/{id}(id=${match.id})}"
+                      th:object="${commentForm}" method="post" class="mb-0">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <label for="comment-content" class="form-label fw-semibold">Add a comment</label>
+                    <textarea id="comment-content" th:field="*{content}"
+                              class="form-control js-comment-textarea"
+                              rows="3" th:maxlength="${T(il.ac.jmc.matchday.dto.CommentForm).CONTENT_MAX}"
+                              th:classappend="${#fields.hasErrors('content')} ? ' is-invalid' : ''"></textarea>
+                    <div th:if="${#fields.hasErrors('content')}" class="invalid-feedback d-block"
+                         th:errors="*{content}">Comment error</div>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send-fill me-1"></i>Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+            <a th:href="@{/login(returnUrl=${loginReturnUrl})}" class="alert-link">Log in</a> to add a comment.
+        </div>
+
+        <div th:if="${commentThread.isEmpty()}" class="text-muted">
+            No comments yet.
+        </div>
+
+        <div th:unless="${commentThread.isEmpty()}" class="vstack gap-2">
+            <th:block th:replace="~{shared/comment-ui :: commentItems(${commentThread})}"></th:block>
+        </div>
+    </section>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/comment.js}"></script>
+</body>
+</html>

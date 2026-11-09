@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+
+<!-- INFO TOOLTIP ICON fragment
+     Usage: th:replace="~{shared/forms :: infoTooltip('Your hint text here')}" -->
+<i th:fragment="infoTooltip(text)" class="bi bi-info-circle text-muted"
+   data-bs-toggle="tooltip" data-bs-placement="right"
+   th:title="${text}" style="cursor:pointer"></i>
+
+<!-- SHOW/HIDE PASSWORD BUTTON fragment
+     Usage: th:replace="~{shared/forms :: passwordToggle('inputId')}" -->
+<button th:fragment="passwordToggle(inputId)" type="button"
+        class="password-toggle"
+        th:attr="data-target=${inputId}"
+        data-toggle-password>
+    <i class="bi bi-eye"></i>
+</button>
+
+<!-- ENUM CHECKBOX DROPDOWN fragment
+     Usage: th:replace="~{shared/forms :: enumCheckboxDropdown('position', 'Positions', ${positions}, ${selectedPositions}, 'pos')}" -->
+<div th:fragment="enumCheckboxDropdown(fieldName, label, values, selectedValues, idPrefix)" class="col-auto">
+    <div class="dropdown">
+        <button type="button"
+                class="btn btn-outline-secondary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                th:attr="data-counter-for=${fieldName}">
+            <span th:text="${label}">Options</span><span data-counter-text
+                                                         th:text="${selectedValues.isEmpty() ? '' : ' (' + selectedValues.size() + ')'}"></span>
+        </button>
+        <div class="dropdown-menu p-2 filter-dropdown-menu">
+            <input type="search"
+                   class="form-control form-control-sm mb-2"
+                   th:placeholder="${'Search ' + label + '...'}"
+                   autocomplete="off"
+                   data-dropdown-search/>
+            <div th:each="value : ${values}" class="form-check" data-dropdown-option>
+                <input class="form-check-input" type="checkbox"
+                       th:name="${fieldName}"
+                       th:value="${value}"
+                       th:id="${idPrefix + '-' + value}"
+                       th:checked="${selectedValues.contains(value)}"
+                       data-auto-submit/>
+                <label class="form-check-label"
+                       th:for="${idPrefix + '-' + value}"
+                       th:text="${value.displayName}">Option</label>
+            </div>
+            <div class="text-muted small d-none" data-dropdown-empty>No matching options.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ENTITY CHECKBOX DROPDOWN fragment
+     Values must expose id and name properties.
+     Usage: th:replace="~{shared/forms :: entityCheckboxDropdown('leagueId', 'Leagues', ${leagues}, ${selectedLeagueIds}, 'league')}" -->
+<div th:fragment="entityCheckboxDropdown(fieldName, label, values, selectedIds, idPrefix)" class="col-auto">
+    <div class="dropdown">
+        <button type="button"
+                class="btn btn-outline-secondary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                th:attr="data-counter-for=${fieldName}">
+            <span th:text="${label}">Options</span><span data-counter-text
+                                                         th:text="${selectedIds.isEmpty() ? '' : ' (' + selectedIds.size() + ')'}"></span>
+        </button>
+        <div class="dropdown-menu p-2 filter-dropdown-menu">
+            <input type="search"
+                   class="form-control form-control-sm mb-2"
+                   th:placeholder="${'Search ' + label + '...'}"
+                   autocomplete="off"
+                   data-dropdown-search/>
+            <div th:each="value : ${values}" class="form-check" data-dropdown-option>
+                <input class="form-check-input" type="checkbox"
+                       th:name="${fieldName}"
+                       th:value="${value.id}"
+                       th:id="${idPrefix + '-' + value.id}"
+                       th:checked="${selectedIds.contains(value.id)}"
+                       data-auto-submit/>
+                <label class="form-check-label"
+                       th:for="${idPrefix + '-' + value.id}"
+                       th:text="${value.name}">Option</label>
+            </div>
+            <div class="text-muted small d-none" data-dropdown-empty>No matching options.</div>
+        </div>
+    </div>
+</div>
+
+<!-- DATE RANGE PICKER fragment — two date inputs joined with a "to" separator.
+     fromId/toId: unique HTML ids (for accessibility labels)
+     colClass:   Bootstrap column class for the outer wrapper, e.g. 'col-sm-8 col-lg-4'
+     Usage: th:replace="~{shared/forms :: dateRangePicker('from-id', 'to-id', ${criteria.fromDate}, ${criteria.toDate}, 'col-sm-8 col-lg-4')}" -->
+<div th:fragment="dateRangePicker(fromId, toId, fromValue, toValue, colClass)" th:class="${colClass}">
+    <label th:for="${fromId}" class="visually-hidden">From date</label>
+    <label th:for="${toId}" class="visually-hidden">To date</label>
+    <div class="input-group">
+        <input type="date" th:id="${fromId}" name="fromDate" class="form-control"
+               th:value="${fromValue}"
+               data-auto-submit
+               data-clearable/>
+        <span class="input-group-text">to</span>
+        <input type="date" th:id="${toId}" name="toDate" class="form-control"
+               th:value="${toValue}"
+               data-auto-submit
+               data-clearable/>
+    </div>
+</div>
+
+<!-- NAME SEARCH BAR fragment
+     colClass controls the input width (Bootstrap col class).
+     Usage: th:replace="~{shared/forms :: nameSearchBar(@{/teams},       ${searchQuery}, 'col-sm-8 col-md-6')}"
+            th:replace="~{shared/forms :: nameSearchBar(@{/admin/teams}, ${searchQuery}, 'col-sm-5 col-md-3')}" -->
+<form th:fragment="nameSearchBar(action, searchQuery, colClass)" th:action="${action}" method="get" class="row g-2 mb-4">
+    <div th:class="${colClass}">
+        <label for="name-search" class="visually-hidden">Search</label>
+        <input type="text" id="name-search" name="name" class="form-control"
+               placeholder="Search..."
+               th:value="${searchQuery}"
+               autocomplete="off"
+               data-debounce-search
+               data-search-target="#searchResults"/>
+    </div>
+    <div class="col-auto">
+        <button type="button" id="clearBtn"
+                class="btn btn-outline-secondary"
+                th:classappend="${searchQuery == null or #strings.isEmpty(searchQuery)} ? 'd-none' : ''">
+            Clear
+        </button>
+    </div>
+</form>
+
+</html>

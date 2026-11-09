@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!-- RECENT SEARCH LIST fragment
+     Usage: th:replace="~{shared/search-ui :: recentSearchList(${recentSearches}, ${returnUrl}, true)}" -->
+<div th:fragment="recentSearchList(recentSearches, returnUrl, showTime)" class="d-flex flex-wrap gap-2">
+    <div th:each="recent : ${recentSearches}" class="btn-group btn-group-sm">
+        <a th:href="@{/search} + '?' + ${recent.queryString}"
+           class="btn btn-outline-secondary text-start">
+            <span th:text="${recent.label}">Matches: Arsenal</span>
+            <span th:if="${showTime}" class="d-block text-muted small"
+                  th:text="${#temporals.format(recent.performedAt, 'dd/MM/yyyy HH:mm')}">01/01/2026 12:00</span>
+        </a>
+        <form th:action="@{/search/recent/delete}" method="post" class="mb-0">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="queryString" th:value="${recent.queryString}"/>
+            <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+            <button type="submit"
+                    class="btn btn-outline-secondary"
+                    title="Delete recent search"
+                    th:attr="aria-label=${'Delete recent search ' + recent.label}">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </form>
+    </div>
+    <form th:if="${!recentSearches.isEmpty()}"
+          th:action="@{/search/recent/clear}"
+          method="post"
+          class="mb-0">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+        <button type="submit"
+                class="btn btn-sm btn-outline-danger"
+                title="Clear all recent searches"
+                aria-label="Clear all recent searches">
+            <i class="bi bi-trash3 me-1"></i>Clear all
+        </button>
+    </form>
+</div>
+
+<!-- SEE-ALL LINK fragment - shown when a capped result section has more rows than displayed.
+     Usage: th:replace="~{shared/search-ui :: seeAllLink(${matches}, @{/matches(q=${query})}, 'matches')}" -->
+<div th:fragment="seeAllLink(page, url, label)"
+     th:if="${page.totalElements > page.numberOfElements}"
+     class="text-end">
+    <a th:href="${url}" class="btn btn-sm btn-outline-secondary">
+        See all <span th:text="${page.totalElements}">0</span> <span th:text="${label}">items</span><i class="bi bi-arrow-right ms-1"></i>
+    </a>
+</div>
+
+</html>

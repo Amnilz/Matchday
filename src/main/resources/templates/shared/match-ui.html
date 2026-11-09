@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!-- MATCH STATUS fragment
+     Usage: th:replace="~{shared/match-ui :: matchStatus(${match.status})}" -->
+<span th:fragment="matchStatus(status)" th:switch="${status.name()}">
+    <span th:case="'COMPLETED'" class="badge bg-success" th:text="${status.displayName}">Completed</span>
+    <span th:case="'SCHEDULED'" class="badge bg-primary" th:text="${status.displayName}">Scheduled</span>
+    <span th:case="'CANCELLED'" class="badge bg-secondary" th:text="${status.displayName}">Cancelled</span>
+</span>
+
+<!-- MATCH SCORE fragment
+     Usage: th:replace="~{shared/match-ui :: matchScore(${match})}" -->
+<span th:fragment="matchScore(match)" th:switch="${match.status.name()}">
+    <span th:case="'COMPLETED'"
+          class="fw-bold"
+          th:text="${match.homeScore != null and match.awayScore != null ? match.homeScore + ' - ' + match.awayScore : '?-?'}">0 - 0</span>
+    <span th:case="'CANCELLED'" class="text-muted">Cancelled</span>
+    <span th:case="*" class="text-muted">vs</span>
+</span>
+
+<!-- TEAM MATCH RESULT fragment
+     Usage: th:replace="~{shared/match-ui :: teamMatchResult(${match}, ${team})}" -->
+<span th:fragment="teamMatchResult(match, team)"
+      th:with="outcome=${match.getOutcomeForTeam(team.id)}">
+    <span th:if="${outcome == 'W'}" class="badge bg-success">W</span>
+    <span th:if="${outcome == 'D'}" class="badge bg-secondary">D</span>
+    <span th:if="${outcome == 'L'}" class="badge bg-danger">L</span>
+</span>
+
+<!-- MATCH EVENT ICON fragment
+     Usage: th:replace="~{shared/match-ui :: matchEventIcon(${event.type})}" -->
+<span th:fragment="matchEventIcon(type)" th:switch="${type.name()}">
+    <span th:case="'GOAL'" class="badge bg-success"
+          th:title="${type.displayName}" th:attr="aria-label=${type.displayName}">
+        <i class="bi bi-record-circle-fill me-1" aria-hidden="true"></i><span th:text="${type.displayName}">Goal</span>
+    </span>
+    <span th:case="'ASSIST'" class="badge bg-info text-dark"
+          th:title="${type.displayName}" th:attr="aria-label=${type.displayName}">
+        <i class="bi bi-arrow-up-right-circle-fill me-1" aria-hidden="true"></i><span th:text="${type.displayName}">Assist</span>
+    </span>
+    <span th:case="'YELLOW_CARD'" class="badge bg-warning text-dark"
+          th:title="${type.displayName}" th:attr="aria-label=${type.displayName}">
+        <i class="bi bi-square-fill me-1" aria-hidden="true"></i><span th:text="${type.displayName}">Yellow card</span>
+    </span>
+    <span th:case="'RED_CARD'" class="badge bg-danger"
+          th:title="${type.displayName}" th:attr="aria-label=${type.displayName}">
+        <i class="bi bi-square-fill me-1" aria-hidden="true"></i><span th:text="${type.displayName}">Red card</span>
+    </span>
+</span>
+
+<!-- MATCH FILTER BAR fragment
+     Usage:
+     th:replace="~{shared/match-ui :: matchFilterBar(${action}, ${criteria}, ${leagues}, ${teams}, ${statuses}, ${selectedLeagueIds}, ${selectedTeamIds}, ${selectedStatuses}, ${resultFilters}, ${selectedResults})}" -->
+<form th:fragment="matchFilterBar(action, criteria, leagues, teams, statuses, selectedLeagueIds, selectedTeamIds, selectedStatuses, resultFilters, selectedResults)"
+      th:action="${action}" method="get" class="row g-2 mb-4 align-items-center">
+    <div class="col-sm-4 col-lg-3">
+        <label for="match-search" class="visually-hidden">Search by team</label>
+        <input type="text" id="match-search" name="q" class="form-control"
+               placeholder="Search by team..."
+               th:value="${criteria.query}"
+               autocomplete="off"
+               data-debounce-search
+               data-search-target="#searchResults"/>
+    </div>
+
+    <th:block th:replace="~{shared/forms :: entityCheckboxDropdown('leagueId', 'Leagues', ${leagues}, ${selectedLeagueIds}, 'match-league')}"></th:block>
+
+    <th:block th:replace="~{shared/team-ui :: teamCheckboxDropdown('Teams', ${teams}, ${selectedTeamIds}, 'match-team')}"></th:block>
+
+    <th:block th:replace="~{shared/forms :: enumCheckboxDropdown('status', 'Statuses', ${statuses}, ${selectedStatuses}, 'match-status')}"></th:block>
+
+    <th:block th:replace="~{shared/forms :: enumCheckboxDropdown('result', 'Match result', ${resultFilters}, ${selectedResults}, 'match-result')}"></th:block>
+
+    <th:block th:replace="~{shared/forms :: dateRangePicker('match-from-date', 'match-to-date', ${criteria.fromDate}, ${criteria.toDate}, 'col-sm-8 col-lg-4')}"></th:block>
+
+    <div class="col-auto">
+        <button type="button" id="clearBtn" class="btn btn-outline-secondary"
+                th:classappend="${!criteria.hasFilters()} ? 'd-none' : ''">
+            Clear
+        </button>
+    </div>
+</form>
+
+<!-- UPCOMING MATCH TABLE HEAD fragment
+     Usage: th:replace="~{shared/match-ui :: matchUpcomingHead}" -->
+<tr th:fragment="matchUpcomingHead">
+    <th>Date</th>
+    <th>Home</th>
+    <th class="text-center">vs</th>
+    <th>Away</th>
+    <th></th>
+</tr>
+
+<!-- UPCOMING MATCH ROW fragment
+     highlightTeamId: the team whose name should be bolded (the "home" team for this view).
+     Usage: th:replace="~{shared/match-ui :: matchUpcomingRow(${m}, ${team.id})}"
+            th:replace="~{shared/match-ui :: matchUpcomingRow(${m}, ${player.team.id})}" -->
+<tr th:fragment="matchUpcomingRow(match, highlightTeamId)">
+    <td class="text-muted small" th:text="${#temporals.format(match.matchDate, 'dd/MM/yyyy')}">Date</td>
+    <td th:classappend="${match.homeTeam.id == highlightTeamId} ? 'fw-semibold' : ''">
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.homeTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-center text-muted">–</td>
+    <td th:classappend="${match.awayTeam.id == highlightTeamId} ? 'fw-semibold' : ''">
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.awayTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-end">
+        <a th:href="${returnUrl != null} ? @{/matches/{id}(id=${match.id}, returnUrl=${returnUrl})} : @{/matches/{id}(id=${match.id})}"
+           class="btn btn-sm btn-outline-secondary">View</a>
+    </td>
+</tr>
+
+<!-- RESULT CELLS fragment - the 5 shared <td> cells for a completed-match results row.
+     Use th:replace on a th:block inside a <tr> so the page can append extra columns after.
+     Usage (teams/detail - no extra columns):
+       <tr th:each="m : ${completedMatches}">
+           <th:block th:replace="~{shared/match-ui :: matchResultCells(${m}, ${team})}"></th:block>
+           <td class="text-end"><a ...>View</a></td>
+       </tr>
+     Usage (players/detail - extra Contribution column):
+       <tr th:each="m : ${completedMatches}">
+           <th:block th:replace="~{shared/match-ui :: matchResultCells(${m}, ${player.team})}"></th:block>
+           <td>...contribution...</td>
+           <td class="text-end"><a ...>View</a></td>
+       </tr> -->
+<th:block th:fragment="matchResultCells(match, team)">
+    <td class="text-muted small" th:text="${#temporals.format(match.matchDate, 'dd/MM/yyyy')}">Date</td>
+    <td th:classappend="${match.homeTeam.id == team.id} ? 'fw-semibold' : ''">
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.homeTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-center">
+        <th:block th:replace="~{shared/match-ui :: matchScore(${match})}"></th:block>
+    </td>
+    <td th:classappend="${match.awayTeam.id == team.id} ? 'fw-semibold' : ''">
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.awayTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-center d-none d-md-table-cell">
+        <th:block th:replace="~{shared/match-ui :: teamMatchResult(${match}, ${team})}"></th:block>
+    </td>
+</th:block>
+
+<!-- MATCH TABLE HEAD fragment
+     Usage: th:replace="~{shared/match-ui :: matchTableHead(false)}"  (public)
+            th:replace="~{shared/match-ui :: matchTableHead(true)}"   (admin) -->
+<tr th:fragment="matchTableHead(isAdmin)">
+    <th>Date</th>
+    <th>League</th>
+    <th>Home</th>
+    <th class="text-center">Score</th>
+    <th>Away</th>
+    <th class="text-center d-none d-md-table-cell">Status</th>
+    <th th:if="${isAdmin}" class="text-end">Actions</th>
+    <th th:unless="${isAdmin}"></th>
+</tr>
+
+<!-- MATCH TABLE ROW fragment
+     Usage: th:replace="~{shared/match-ui :: matchTableRow(${match}, false)}"  (public)
+            th:replace="~{shared/match-ui :: matchTableRow(${match}, true)}"   (admin) -->
+<tr th:fragment="matchTableRow(match, isAdmin)">
+    <td class="text-muted small">
+        <span th:if="${isAdmin}"    th:text="${#temporals.format(match.matchDate, 'dd/MM/yyyy HH:mm')}"></span>
+        <span th:unless="${isAdmin}" th:text="${#temporals.format(match.matchDate, 'dd/MM/yyyy')}"></span>
+    </td>
+    <td>
+        <a th:if="${match.league != null}"
+           th:href="@{/leagues/{id}(id=${match.league.id})}"
+           class="badge text-bg-warning text-decoration-none"
+           th:text="${match.league.name}">League</a>
+        <span th:unless="${match.league != null}" class="badge text-bg-secondary">Unassigned</span>
+    </td>
+    <td>
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.homeTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-center">
+        <th:block th:replace="~{shared/match-ui :: matchScore(${match})}"></th:block>
+    </td>
+    <td>
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.awayTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-center d-none d-md-table-cell">
+        <th:block th:replace="~{shared/match-ui :: matchStatus(${match.status})}"></th:block>
+    </td>
+    <td class="text-end">
+        <th:block th:if="${!isAdmin}">
+            <a th:href="${returnUrl != null} ? @{/matches/{id}(id=${match.id}, returnUrl=${returnUrl})} : @{/matches/{id}(id=${match.id})}"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-eye me-1"></i>View
+            </a>
+        </th:block>
+        <th:block th:if="${isAdmin}">
+            <a th:href="${returnUrl != null} ? @{/matches/{id}(id=${match.id}, returnUrl=${returnUrl})} : @{/matches/{id}(id=${match.id})}"
+               class="btn btn-sm btn-outline-secondary me-1">
+                <i class="bi bi-eye me-1"></i>View
+            </a>
+            <a th:href="${returnUrl != null} ? @{/admin/matches/{id}/edit(id=${match.id}, returnUrl=${returnUrl})} + '#tab-details' : @{|/admin/matches/${match.id}/edit#tab-details|}"
+               class="btn btn-sm btn-outline-success me-1"
+               th:if="${match.status.name() == 'COMPLETED'}">
+                <i class="bi bi-trophy me-1"></i>Result
+            </a>
+            <a th:href="${returnUrl != null} ? @{/admin/matches/{id}/edit(id=${match.id}, returnUrl=${returnUrl})} : @{/admin/matches/{id}/edit(id=${match.id})}"
+               class="btn btn-sm btn-outline-primary me-1">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteModal"
+                    th:attr="data-entity-name=${match.homeTeam.name + ' vs ' + match.awayTeam.name}"
+                    th:data-return-url="${returnUrl}"
+                    th:data-delete-url="@{/admin/matches/{id}/delete(id=${match.id})}">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </th:block>
+    </td>
+</tr>
+
+<!-- LEAGUE DETAIL MATCH TABLE HEAD fragment
+     Usage: th:replace="~{shared/match-ui :: leagueMatchTableHead}" -->
+<tr th:fragment="leagueMatchTableHead">
+    <th>Date</th>
+    <th>Home</th>
+    <th class="text-center">Score</th>
+    <th>Away</th>
+    <th></th>
+</tr>
+
+<!-- LEAGUE DETAIL MATCH TABLE ROW fragment
+     Usage: th:replace="~{shared/match-ui :: leagueMatchTableRow(${match})}" -->
+<tr th:fragment="leagueMatchTableRow(match)">
+    <td class="text-muted small" th:text="${#temporals.format(match.matchDate, 'dd/MM/yyyy')}">Date</td>
+    <td>
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.homeTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-center">
+        <th:block th:replace="~{shared/match-ui :: matchScore(${match})}"></th:block>
+    </td>
+    <td>
+        <th:block th:replace="~{shared/team-ui :: teamLink(${match.awayTeam}, 24, true)}"></th:block>
+    </td>
+    <td class="text-end">
+        <a th:href="${returnUrl != null} ? @{/matches/{id}(id=${match.id}, returnUrl=${returnUrl})} : @{/matches/{id}(id=${match.id})}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-eye me-1"></i>View
+        </a>
+    </td>
+</tr>
+
+</html>

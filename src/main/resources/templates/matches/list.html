@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Matches')}">
+    <title>Matches</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="mb-3">
+        <h2 class="mb-0"><i class="bi bi-calendar3 text-warning me-2"></i>Matches</h2>
+    </div>
+
+    <th:block th:with="action=@{/matches}"
+              th:replace="~{shared/match-ui :: matchFilterBar(${action}, ${criteria}, ${leagues}, ${teams}, ${statuses}, ${selectedLeagueIds}, ${selectedTeamIds}, ${selectedStatuses}, ${resultFilters}, ${selectedResults})}"></th:block>
+
+    <div id="searchResults" th:fragment="results">
+
+        <div th:if="${criteria.hasInvalidDateRange()}" class="alert alert-warning">
+            The start date must be before the end date.
+        </div>
+
+        <p th:if="${!criteria.hasInvalidDateRange() and !matches.isEmpty() and criteria.hasFilters()}"
+           class="text-muted small">
+            Showing <strong th:text="${matches.totalElements}">0</strong> match(es)
+        </p>
+
+        <div th:if="${!criteria.hasInvalidDateRange() and matches.isEmpty()}" class="alert alert-info">
+            No matches found.
+        </div>
+
+        <div th:unless="${matches.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <th:block th:replace="~{shared/match-ui :: matchTableHead(false)}"></th:block>
+                </thead>
+                <tbody>
+                    <th:block th:each="match : ${matches}">
+                        <th:block th:replace="~{shared/match-ui :: matchTableRow(${match}, false)}"></th:block>
+                    </th:block>
+                </tbody>
+            </table>
+        </div>
+
+        <th:block th:replace="~{shared/pagination :: pagination(${matches}, @{/matches(q=${criteria.query}, leagueId=${criteria.leagueIds}, teamId=${criteria.teamIds}, status=${criteria.statuses}, result=${criteria.resultFilters}, fromDate=${criteria.fromDate}, toDate=${criteria.toDate})})}"></th:block>
+
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/search.js}"></script>
+</body>
+</html>

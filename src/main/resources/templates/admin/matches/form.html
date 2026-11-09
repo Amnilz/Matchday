@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head(${editId == null} ? 'New Match' : 'Edit Match')}">
+    <title>Match Form</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <a th:href="${returnUrl}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Matches
+        </a>
+        <h2 class="mb-0">
+            <i class="bi bi-calendar3 text-warning me-2"></i>
+            <span th:text="${editId == null} ? 'New Match' : 'Edit Match'">Match</span>
+        </h2>
+        <a th:if="${editId != null}"
+           th:href="@{/matches/{id}(id=${editId})}"
+           class="btn btn-outline-secondary btn-sm ms-auto">
+            <i class="bi bi-eye me-1"></i>View Match
+        </a>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('matches')}"></th:block>
+
+    <th:block th:replace="~{admin/fragments :: flashMessages}"></th:block>
+
+    <form th:action="@{${editId == null ? '/admin/matches' : '/admin/matches/' + editId + '/edit'}}"
+          th:object="${form}"
+          method="post"
+          novalidate
+          data-guard
+          id="matchForm"
+          class="border rounded bg-white shadow-sm">
+
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+
+        <ul class="nav nav-tabs px-3 pt-3" id="matchAdminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link"
+                        th:classappend="${activeTab != 'events'} ? ' active' : ''"
+                        id="details-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#tab-details"
+                        type="button"
+                        role="tab">
+                    <i class="bi bi-pencil me-1"></i>Details
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link"
+                        th:classappend="${!eventsTabEnabled ? ' disabled' : (activeTab == 'events' ? ' active' : '')}"
+                        id="events-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#tab-events"
+                        type="button"
+                        role="tab"
+                        th:disabled="${!eventsTabEnabled}">
+                    <i class="bi bi-lightning-fill me-1"></i>Events
+                    <span id="eventCountBadge"
+                          class="badge bg-secondary ms-1"
+                          th:text="${form.events.size()}">0</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content p-4">
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger py-2">
+                <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Form error</div>
+            </div>
+
+            <section class="tab-pane fade"
+                     th:classappend="${activeTab != 'events'} ? ' show active' : ''"
+                     id="tab-details"
+                     role="tabpanel"
+                     aria-labelledby="details-tab">
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="leagueId" class="form-label fw-semibold">
+                            League <span class="text-danger">*</span>
+                        </label>
+                        <select id="leagueId" th:field="*{leagueId}"
+                                class="form-select"
+                                th:classappend="${#fields.hasErrors('leagueId')} ? 'is-invalid' : ''"
+                                data-searchable-select
+                                data-search-placeholder="Search leagues...">
+                            <option value="">-- select league --</option>
+                            <option th:each="league : ${leagues}"
+                                    th:value="${league.id}"
+                                    th:text="${league.name}">League</option>
+                        </select>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('leagueId')}"
+                             th:errors="*{leagueId}">League error</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="homeTeamId" class="form-label fw-semibold">
+                            Home Team <span class="text-danger">*</span>
+                        </label>
+                        <select id="homeTeamId" th:field="*{homeTeamId}"
+                                class="form-select"
+                                th:classappend="${#fields.hasErrors('homeTeamId')} ? 'is-invalid' : ''"
+                                data-searchable-select
+                                data-search-placeholder="Search home teams...">
+                            <option value="">-- select home team --</option>
+                            <option th:each="team : ${teams}"
+                                    th:value="${team.id}"
+                                    th:attr="data-league-ids=${teamLeagueIds[team.id]}"
+                                    th:text="${team.name}">Team</option>
+                        </select>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('homeTeamId')}"
+                             th:errors="*{homeTeamId}">Home team error</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="awayTeamId" class="form-label fw-semibold">
+                            Away Team <span class="text-danger">*</span>
+                        </label>
+                        <select id="awayTeamId" th:field="*{awayTeamId}"
+                                class="form-select"
+                                th:classappend="${#fields.hasErrors('awayTeamId')} ? 'is-invalid' : ''"
+                                data-searchable-select
+                                data-search-placeholder="Search away teams...">
+                            <option value="">-- select away team --</option>
+                            <option th:each="team : ${teams}"
+                                    th:value="${team.id}"
+                                    th:attr="data-league-ids=${teamLeagueIds[team.id]}"
+                                    th:text="${team.name}">Team</option>
+                        </select>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('awayTeamId')}"
+                             th:errors="*{awayTeamId}">Away team error</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="matchDate" class="form-label fw-semibold">
+                            Date &amp; Time <span class="text-danger">*</span>
+                        </label>
+                        <input type="datetime-local" id="matchDate" th:field="*{matchDate}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('matchDate')} ? 'is-invalid' : ''"/>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('matchDate')}"
+                             th:errors="*{matchDate}">Date error</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="status" class="form-label fw-semibold">Status</label>
+                        <select id="status" th:field="*{status}"
+                                class="form-select"
+                                th:classappend="${#fields.hasErrors('status')} ? 'is-invalid' : ''"
+                                data-searchable-select
+                                data-search-placeholder="Search statuses...">
+                            <option th:each="s : ${statuses}"
+                                    th:value="${s}"
+                                    th:text="${s.displayName}">Status</option>
+                        </select>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('status')}"
+                             th:errors="*{status}">Status error</div>
+                    </div>
+
+                    <div id="scoreFields"
+                         th:classappend="${form.status != null and form.status.name() == 'COMPLETED'} ? '' : ' d-none'"
+                         class="col-12">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-5 col-md-3">
+                                <label for="homeScore" class="form-label fw-semibold text-center d-block">Home Score</label>
+                                <input type="number" id="homeScore" th:field="*{homeScore}"
+                                       class="form-control text-center"
+                                       th:classappend="${#fields.hasErrors('homeScore')} ? 'is-invalid' : ''"
+                                       min="0" max="99" placeholder="0"/>
+                                <div class="invalid-feedback text-center" th:if="${#fields.hasErrors('homeScore')}"
+                                     th:errors="*{homeScore}">Score error</div>
+                            </div>
+                            <div class="col-2 col-md-1 d-flex align-items-center justify-content-center pt-4 mt-1">
+                                <span class="fs-4 text-muted fw-bold">-</span>
+                            </div>
+                            <div class="col-5 col-md-3">
+                                <label for="awayScore" class="form-label fw-semibold text-center d-block">Away Score</label>
+                                <input type="number" id="awayScore" th:field="*{awayScore}"
+                                       class="form-control text-center"
+                                       th:classappend="${#fields.hasErrors('awayScore')} ? 'is-invalid' : ''"
+                                       min="0" max="99" placeholder="0"/>
+                                <div class="invalid-feedback text-center" th:if="${#fields.hasErrors('awayScore')}"
+                                     th:errors="*{awayScore}">Score error</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-pane fade"
+                     th:classappend="${activeTab == 'events'} ? ' show active' : ''"
+                     id="tab-events"
+                     role="tabpanel"
+                     aria-labelledby="events-tab">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="h6 mb-0">Events</h3>
+                    <button type="button" class="btn btn-sm btn-primary" id="addEventRowBtn">
+                        <i class="bi bi-plus-lg me-1"></i>Add Event
+                    </button>
+                </div>
+
+                <div class="table-responsive match-events-table-wrapper">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width:100px">Min</th>
+                            <th style="width:210px">Type</th>
+                            <th>Player</th>
+                            <th class="text-end" style="width:60px"></th>
+                        </tr>
+                        </thead>
+                        <tbody id="eventRows">
+                        <th:block th:each="event, stat : ${form.events}">
+                            <tr data-event-row>
+                                <td>
+                                    <input type="number"
+                                           th:field="*{events[__${stat.index}__].minute}"
+                                           class="form-control form-control-sm"
+                                           th:classappend="${#fields.hasErrors('events[' + stat.index + '].minute')} ? 'is-invalid' : ''"
+                                           th:min="${T(il.ac.jmc.matchday.dto.EventForm).MINUTE_MIN}"
+                                           th:max="${T(il.ac.jmc.matchday.dto.EventForm).MINUTE_MAX}"
+                                           placeholder="45"/>
+                                </td>
+                                <td>
+                                    <select th:field="*{events[__${stat.index}__].type}"
+                                            class="form-select form-select-sm"
+                                            th:classappend="${#fields.hasErrors('events[' + stat.index + '].type')} ? 'is-invalid' : ''"
+                                            data-searchable-select
+                                            data-search-placeholder="Search event types...">
+                                        <option value="">-- type --</option>
+                                        <option th:each="t : ${eventTypes}"
+                                                th:value="${t}"
+                                                th:text="${t.displayName}">Type</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select th:field="*{events[__${stat.index}__].playerId}"
+                                            class="form-select form-select-sm event-player-select"
+                                            th:classappend="${#fields.hasErrors('events[' + stat.index + '].playerId')} ? 'is-invalid' : ''"
+                                            data-searchable-select
+                                            data-search-placeholder="Search players...">
+                                        <option value="">-- player --</option>
+                                        <option th:each="p : ${allPlayers}"
+                                                th:value="${p.id}"
+                                                th:attr="data-team-id=${p.team.id}"
+                                                th:text="'#' + ${p.shirtNumber} + ' ' + ${p.fullName} + ' (' + ${p.team.name} + ')'">Player</option>
+                                    </select>
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-remove-event title="Remove">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr data-event-error-row
+                                th:if="${#fields.hasErrors('events[' + stat.index + '].minute')
+                                         or #fields.hasErrors('events[' + stat.index + '].type')
+                                         or #fields.hasErrors('events[' + stat.index + '].playerId')}">
+                                <td colspan="4" class="pt-0 pb-2 border-top-0">
+                                    <div class="text-danger small">
+                                        <div th:if="${#fields.hasErrors('events[' + stat.index + '].minute')}"
+                                             th:errors="*{events[__${stat.index}__].minute}"></div>
+                                        <div th:if="${#fields.hasErrors('events[' + stat.index + '].type')}"
+                                             th:errors="*{events[__${stat.index}__].type}"></div>
+                                        <div th:if="${#fields.hasErrors('events[' + stat.index + '].playerId')}"
+                                             th:errors="*{events[__${stat.index}__].playerId}"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </th:block>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div th:replace="~{admin/fragments :: formButtons('Create Match', 'Save Match', ${returnUrl}, 'btn-warning', 'p-4 pt-0')}"></div>
+    </form>
+
+    <template id="eventRowTemplate">
+        <tr data-event-row>
+            <td>
+                <input type="number" name="events[__INDEX__].minute"
+                       class="form-control form-control-sm"
+                       th:min="${T(il.ac.jmc.matchday.dto.EventForm).MINUTE_MIN}"
+                       th:max="${T(il.ac.jmc.matchday.dto.EventForm).MINUTE_MAX}"
+                       placeholder="45"/>
+            </td>
+            <td>
+                <select name="events[__INDEX__].type" class="form-select form-select-sm"
+                        data-searchable-select
+                        data-search-placeholder="Search event types...">
+                    <option value="">-- type --</option>
+                    <option th:each="t : ${eventTypes}"
+                            th:value="${t}"
+                            th:text="${t.displayName}">Type</option>
+                </select>
+            </td>
+            <td>
+                <select name="events[__INDEX__].playerId" class="form-select form-select-sm event-player-select"
+                        data-searchable-select
+                        data-search-placeholder="Search players...">
+                    <option value="">-- player --</option>
+                    <option th:each="p : ${allPlayers}"
+                            th:value="${p.id}"
+                            th:attr="data-team-id=${p.team.id}"
+                            th:text="'#' + ${p.shirtNumber} + ' ' + ${p.fullName} + ' (' + ${p.team.name} + ')'">Player</option>
+                </select>
+            </td>
+            <td class="text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-event title="Remove">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </td>
+        </tr>
+    </template>
+
+</main>
+
+<th:block th:replace="~{admin/fragments :: formGuardModal}"></th:block>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/form-guard.js}"></script>
+<script th:src="@{/js/tabs.js}"></script>
+<script th:src="@{/js/admin-match-form.js}"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Search')}">
+    <title>Search</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="mb-3">
+        <h2 class="mb-0"><i class="bi bi-search text-secondary me-2"></i>Search</h2>
+    </div>
+
+    <form th:action="@{/search}" method="get" class="row g-2 mb-4 align-items-end">
+        <div class="col-12 col-lg-4">
+            <label for="advanced-search-query" class="visually-hidden">Search</label>
+            <input type="search" id="advanced-search-query" name="q" class="form-control"
+                   placeholder="Search leagues, teams, players, matches..."
+                   th:value="${query}"
+                   autocomplete="off"
+                   data-debounce-search
+                   data-search-target="#searchResults"/>
+        </div>
+
+        <th:block th:replace="~{shared/forms :: entityCheckboxDropdown('leagueId', 'League', ${leagues}, ${selectedLeagueIds}, 'search-league')}"></th:block>
+        <th:block th:replace="~{shared/team-ui :: teamCheckboxDropdown('Involving team', ${teams}, ${selectedTeamIds}, 'search-team')}"></th:block>
+        <th:block th:replace="~{shared/forms :: enumCheckboxDropdown('status', 'Match status', ${statuses}, ${selectedStatuses}, 'search-status')}"></th:block>
+        <th:block th:replace="~{shared/forms :: enumCheckboxDropdown('result', 'Match result', ${resultFilters}, ${selectedResults}, 'search-result')}"></th:block>
+        <th:block th:replace="~{shared/forms :: enumCheckboxDropdown('position', 'Player position', ${positions}, ${selectedPositions}, 'search-position')}"></th:block>
+
+        <th:block th:replace="~{shared/forms :: dateRangePicker('search-from-date', 'search-to-date', ${criteria.fromDate}, ${criteria.toDate}, 'col-sm-8 col-lg-4')}"></th:block>
+
+        <div class="col-12 col-lg-auto ms-lg-auto">
+            <div class="d-flex gap-2 justify-content-lg-end">
+                <button type="submit" class="btn btn-success flex-fill flex-lg-grow-0">
+                    <i class="bi bi-search me-1"></i>Search
+                </button>
+                <button type="button" id="clearBtn" class="btn btn-outline-secondary flex-fill flex-lg-grow-0"
+                        th:classappend="${!criteria.hasFilters() and selectedPositions.isEmpty()} ? 'd-none' : ''">
+                    Clear
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+    <div id="searchResults" th:fragment="results">
+        <div th:if="${!recentSearches.isEmpty()}" class="mb-4">
+            <h3 class="h6 mb-2"><i class="bi bi-clock-history me-1"></i>Recent Searches</h3>
+            <th:block th:replace="~{shared/search-ui :: recentSearchList(${recentSearches}, ${returnUrl}, false)}"></th:block>
+        </div>
+
+        <div th:if="${criteria.hasInvalidDateRange()}" class="alert alert-warning">
+            The start date must be before the end date.
+        </div>
+
+        <div th:if="${!hasSearch}" class="alert alert-info">
+            No search yet.
+        </div>
+
+        <div th:if="${hasSearch and !criteria.hasInvalidDateRange()
+                     and matches.isEmpty() and players.isEmpty() and teamResults.isEmpty()}"
+             class="alert alert-info">
+            No results found.
+        </div>
+
+        <section th:if="${!criteria.hasInvalidDateRange() and !matches.isEmpty()}" class="mb-5">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                <h3 class="h5 mb-0"><i class="bi bi-calendar3 text-warning me-2"></i>Matches</h3>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border"
+                      th:text="${matches.totalElements}">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <th:block th:replace="~{shared/match-ui :: matchTableHead(false)}"></th:block>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="match : ${matches}">
+                            <th:block th:replace="~{shared/match-ui :: matchTableRow(${match}, false)}"></th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <th:block th:replace="~{shared/search-ui :: seeAllLink(${matches}, @{/matches(q=${query}, leagueId=${criteria.leagueIds}, teamId=${criteria.teamIds}, status=${criteria.statuses}, result=${criteria.resultFilters}, fromDate=${criteria.fromDate}, toDate=${criteria.toDate})}, 'matches')}"></th:block>
+        </section>
+
+        <section th:if="${!players.isEmpty()}" class="mb-5">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                <h3 class="h5 mb-0"><i class="bi bi-person-fill text-primary me-2"></i>Players</h3>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border"
+                      th:text="${players.totalElements}">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <th:block th:replace="~{shared/player-ui :: playerTableHead(null, null, false, true)}"></th:block>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="player : ${players}">
+                            <th:block th:replace="~{shared/player-ui :: playerRow(${player}, null, true, null)}"></th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <th:block th:replace="~{shared/search-ui :: seeAllLink(${players}, @{/players(name=${query}, leagueId=${criteria.leagueIds}, teamId=${criteria.teamIds}, position=${selectedPositions})}, 'players')}"></th:block>
+        </section>
+
+        <section th:if="${!teamResults.isEmpty()}" class="mb-5">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                <h3 class="h5 mb-0"><i class="bi bi-shield-fill text-success me-2"></i>Teams</h3>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border"
+                      th:text="${teamResults.totalElements}">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <th:block th:replace="~{shared/team-ui :: teamTableHead(false, true, true)}"></th:block>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="team : ${teamResults}">
+                            <th:block th:replace="~{shared/team-ui :: teamTableRow(${team}, false, true, true, ${favoriteTeamIds}, ${returnUrl}, 'outline-secondary')}"></th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <th:block th:replace="~{shared/search-ui :: seeAllLink(${teamResults}, @{/teams(name=${query}, leagueId=${criteria.leagueIds})}, 'teams')}"></th:block>
+        </section>
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/search.js}"></script>
+</body>
+</html>

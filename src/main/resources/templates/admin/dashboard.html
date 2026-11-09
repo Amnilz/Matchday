@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Admin Dashboard')}">
+    <title>Admin Dashboard</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0"><i class="bi bi-gear-fill text-danger me-2"></i>Admin Dashboard</h2>
+    </div>
+
+    <!-- Stats overview -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent-warn text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-warning" th:text="${leagueCount}">0</div>
+                    <div class="text-muted small">Leagues</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent-green text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-success" th:text="${teamCount}">0</div>
+                    <div class="text-muted small">Teams</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-primary" th:text="${playerCount}">0</div>
+                    <div class="text-muted small">Players</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent-warn text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-warning" th:text="${scheduledCount}">0</div>
+                    <div class="text-muted small">Scheduled</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent-muted text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-secondary" th:text="${completedCount}">0</div>
+                    <div class="text-muted small">Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent-info text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-info" th:text="${userCount}">0</div>
+                    <div class="text-muted small">Users</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card card-accent-danger text-center h-100">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-danger" th:text="${reportedCommentCount}">0</div>
+                    <div class="text-muted small">Reported</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h5 mb-0"><i class="bi bi-exclamation-circle-fill text-warning me-2"></i>Needs Attention</h3>
+        </div>
+
+        <div th:if="${reportedCommentCount == 0 and scheduledCount == 0 and missingLogoCount == 0 and missingPhotoCount == 0}"
+             class="alert alert-success">
+            Everything looks clear right now.
+        </div>
+
+        <div th:unless="${reportedCommentCount == 0 and scheduledCount == 0 and missingLogoCount == 0 and missingPhotoCount == 0}"
+             class="list-group shadow-sm">
+            <a th:if="${reportedCommentCount > 0}"
+               th:href="@{/admin/comments(reportedOnly=true)}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-flag-fill text-warning me-2"></i>Reported comments</span>
+                <span class="badge bg-danger rounded-pill" th:text="${reportedCommentCount}">0</span>
+            </a>
+            <a th:if="${scheduledCount > 0}"
+               th:href="@{/admin/matches(status='SCHEDULED')}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar3 text-warning me-2"></i>Scheduled matches</span>
+                <span class="badge bg-warning text-dark rounded-pill" th:text="${scheduledCount}">0</span>
+            </a>
+            <a th:if="${missingLogoCount > 0}"
+               th:href="@{/admin/teams}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-shield-fill text-success me-2"></i>Teams missing logos</span>
+                <span class="badge bg-secondary rounded-pill" th:text="${missingLogoCount}">0</span>
+            </a>
+            <a th:if="${missingPhotoCount > 0}"
+               th:href="@{/admin/players}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-fill text-primary me-2"></i>Players missing photos</span>
+                <span class="badge bg-secondary rounded-pill" th:text="${missingPhotoCount}">0</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Management sections -->
+    <div class="row g-4">
+
+        <!-- Leagues -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card card-static border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-trophy-fill text-warning me-2"></i>Leagues</h5>
+                    <p class="card-text text-muted small">Create competitions and assign teams to each league.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a th:href="@{/admin/leagues}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Manage Leagues
+                    </a>
+                    <a th:href="@{/admin/leagues/new}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>New League
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teams -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card card-static border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-shield-fill text-success me-2"></i>Teams</h5>
+                    <p class="card-text text-muted small">Create, edit and delete teams. Manage team names and logos.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a th:href="@{/admin/teams}" class="btn btn-success btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Manage Teams
+                    </a>
+                    <a th:href="@{/admin/teams/new}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>New Team
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card card-static border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-person-fill text-primary me-2"></i>Players</h5>
+                    <p class="card-text text-muted small">Add, edit and remove players. Assign teams, positions and shirt numbers.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a th:href="@{/admin/players}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Manage Players
+                    </a>
+                    <a th:href="@{/admin/players/new}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>New Player
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matches -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card card-static border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-calendar3 text-warning me-2"></i>Matches</h5>
+                    <p class="card-text text-muted small">Schedule matches, update results and manage match status.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a th:href="@{/admin/matches}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Manage Matches
+                    </a>
+                    <a th:href="@{/admin/matches/new}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>New Match
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card card-static border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-people-fill text-danger me-2"></i>Users</h5>
+                    <p class="card-text text-muted small">Review accounts and control who can participate in comments.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a th:href="@{/admin/users}" class="btn btn-danger btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card card-static border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-chat-square-text-fill text-info me-2"></i>Comments</h5>
+                    <p class="card-text text-muted small">Review reported comments and inspect recent discussion activity.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a th:href="@{/admin/comments}" class="btn btn-info btn-sm">
+                        <i class="bi bi-flag-fill me-1"></i>Reported
+                    </a>
+                    <a th:href="@{/admin/comments(reportedOnly=false)}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>All Comments
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/wiki-status.js}"></script>
+</body>
+</html>

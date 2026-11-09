@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Login')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<div th:replace="~{layout/fragments :: header}"></div>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-5 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <div class="card card-static shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h5 mb-0"><i class="bi bi-box-arrow-in-right me-2"></i>Login</h2>
+                </div>
+                <div class="card-body">
+
+                    <div th:if="${param.error}" class="alert alert-danger py-2">
+                        Invalid username or password.
+                    </div>
+                    <div th:if="${param.logout}" class="alert alert-success py-2">
+                        You have been logged out.
+                    </div>
+                    <div th:if="${param.registered}" class="alert alert-success py-2">
+                        Account created! You can now log in.
+                    </div>
+
+                    <form th:action="@{/login}" method="post">
+                        <input th:if="${returnUrl != null}" type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username or Email</label>
+                            <input type="text" id="username" name="username"
+                                   class="form-control" required autofocus/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="password" name="password"
+                                       class="form-control" required/>
+                                <th:block th:replace="~{shared/forms :: passwordToggle('password')}"></th:block>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Login</button>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="card-footer text-center text-muted small">
+                    Don't have an account? <a th:href="@{/register}">Register here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<div th:replace="~{layout/fragments :: scripts}"></div>
+<script th:src="@{/js/show-password.js}"></script>
+</body>
+</html>

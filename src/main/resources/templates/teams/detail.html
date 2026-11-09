@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/fragments :: head(${team.name})}">
+    <title>Team</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="${backUrl}" th:text="${backLabel}">Teams</a></li>
+            <li class="breadcrumb-item active" th:text="${team.name}">Team</li>
+        </ol>
+    </nav>
+
+    <div th:replace="~{shared/alerts :: flashAlert('success', ${successMessage})}"></div>
+
+    <!-- Team header -->
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-4 flex-wrap">
+        <div class="d-flex align-items-center gap-3">
+            <th:block th:replace="~{shared/team-ui :: teamLogo(${team}, 72)}"></th:block>
+            <div>
+                <h2 class="mb-0" th:text="${team.name}">Team Name</h2>
+                <div th:if="${leagues != null and !leagues.isEmpty()}" class="d-flex flex-wrap gap-1 mt-1">
+                    <a th:each="league : ${leagues}"
+                       th:href="@{/leagues/{id}(id=${league.id})}"
+                       class="badge rounded-pill text-bg-warning text-decoration-none"
+                       th:text="${league.name}">League</a>
+                </div>
+                <p th:if="${team.description != null and !#strings.isEmpty(team.description)}"
+                   class="text-muted mb-0" th:text="${team.description}"></p>
+            </div>
+        </div>
+
+        <div>
+            <form sec:authorize="isAuthenticated()" th:if="${!favorite}"
+                  th:action="@{/favorites/teams/{id}(id=${team.id})}" method="post" class="mb-0">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+                <button type="submit" class="btn btn-outline-warning">
+                    <i class="bi bi-star me-1"></i>Add favorite
+                </button>
+            </form>
+            <form sec:authorize="isAuthenticated()" th:if="${favorite}"
+                  th:action="@{/favorites/teams/{id}/remove(id=${team.id})}" method="post" class="mb-0">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-star-fill me-1"></i>Favorite
+                </button>
+            </form>
+            <a sec:authorize="!isAuthenticated()" th:href="@{/login(returnUrl=${loginReturnUrl})}" class="btn btn-outline-warning">
+                <i class="bi bi-star me-1"></i>Login to favorite
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="row g-2 mb-4 text-center">
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', '', '', ${stats.played()}, 'P')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', 'border-success', 'text-success', ${stats.wins()}, 'W')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', '', '', ${stats.draws()}, 'D')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', 'border-danger', 'text-danger', ${stats.losses()}, 'L')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', '', '', ${stats.goalsFor()}, 'GF')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', '', '', ${stats.goalsAgainst()}, 'GA')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', '', '', ${stats.goalDifference()}, 'GD')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col', 'bg-dark text-white', '', ${stats.points()}, 'Pts')}"></th:block>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3" id="teamTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-squad">
+                <i class="bi bi-people-fill me-1"></i>Squad
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upcoming">
+                <i class="bi bi-calendar3 me-1"></i>Upcoming
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-results">
+                <i class="bi bi-clock-history me-1"></i>Results
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- Squad -->
+        <div class="tab-pane fade show active" id="tab-squad">
+            <div th:if="${players.isEmpty()}" class="text-muted">No players registered.</div>
+            <div th:unless="${players.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center" style="width:48px">#</th>
+                        <th>Name</th>
+                        <th>Position</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="player : ${players}">
+                        <td class="text-center text-muted" th:text="${player.shirtNumber}">0</td>
+                        <th:block th:replace="~{shared/player-ui :: playerNameCell(${player})}"></th:block>
+                        <td><span class="badge bg-secondary" th:text="${player.position}">POS</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- Upcoming -->
+        <div class="tab-pane fade" id="tab-upcoming">
+            <div th:if="${upcomingMatches.isEmpty()}" class="text-muted">No upcoming matches.</div>
+            <div th:unless="${upcomingMatches.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <th:block th:replace="~{shared/match-ui :: matchUpcomingHead}"></th:block>
+                </thead>
+                <tbody>
+                    <th:block th:each="m : ${upcomingMatches}">
+                        <th:block th:replace="~{shared/match-ui :: matchUpcomingRow(${m}, ${team.id})}"></th:block>
+                    </th:block>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="tab-pane fade" id="tab-results">
+            <div th:if="${completedMatches.isEmpty()}" class="text-muted">No completed matches.</div>
+            <div th:unless="${completedMatches.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Home</th>
+                        <th class="text-center">Score</th>
+                        <th>Away</th>
+                        <th class="text-center d-none d-md-table-cell">Result</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="m : ${completedMatches}">
+                        <th:block th:replace="~{shared/match-ui :: matchResultCells(${m}, ${team})}"></th:block>
+                        <td class="text-end">
+                            <a th:href="@{/matches/{id}(id=${m.id}, returnUrl=${returnUrl})}"
+                               class="btn btn-sm btn-outline-secondary">View</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/tabs.js}"></script>
+</body>
+</html>

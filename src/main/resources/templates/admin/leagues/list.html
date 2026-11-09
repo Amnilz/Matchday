@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Manage Leagues')}">
+    <title>Manage Leagues</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1" data-wiki-page="leagues">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/admin}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h2 class="mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Manage Leagues</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <th:block th:replace="~{admin/fragments :: wikiFetchBtn(@{/admin/leagues/fetch-logos}, 'Fetch missing logos', 'All logos fetched', ${missingLogoCount == 0})}"></th:block>
+            <a th:href="@{/admin/leagues/new(returnUrl=${returnUrl})}" class="btn btn-warning">
+                <i class="bi bi-plus-lg me-1"></i>New League
+            </a>
+        </div>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('leagues')}"></th:block>
+    <th:block th:replace="~{admin/fragments :: flashMessages}"></th:block>
+
+    <th:block th:with="action=@{/admin/leagues}"
+              th:replace="~{shared/forms :: nameSearchBar(${action}, ${searchQuery}, 'col-sm-5 col-md-3')}"></th:block>
+
+    <div id="searchResults" th:fragment="results">
+
+    <div th:if="${leagues.isEmpty()}" class="alert alert-info">
+        No leagues yet. <a th:href="@{/admin/leagues/new(returnUrl=${returnUrl})}">Create the first one.</a>
+    </div>
+
+    <div th:unless="${leagues.isEmpty()}" class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+            <tr>
+                <th>League</th>
+                <th class="text-center">Teams</th>
+                <th class="text-center">Status</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="league : ${leagues}">
+                <td class="fw-semibold">
+                    <a th:href="@{/leagues/{id}(id=${league.id})}"
+                       class="text-decoration-none d-inline-flex align-items-center gap-2">
+                        <th:block th:replace="~{shared/league-ui :: leagueLogo(${league}, 32, '')}"></th:block>
+                        <span th:text="${league.name}">League</span>
+                    </a>
+                    <div class="text-muted small"
+                         th:text="${league.description != null and !#strings.isEmpty(league.description) ? league.description : 'No description'}">
+                        Description
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-secondary" th:text="${teamCounts[league.id]}">0</span>
+                </td>
+                <td class="text-center">
+                    <span th:if="${league.active}" class="badge bg-success">Active</span>
+                    <span th:unless="${league.active}" class="badge bg-secondary">Inactive</span>
+                </td>
+                <td class="text-end">
+                    <a th:href="@{/admin/teams/new(leagueId=${league.id}, returnUrl=${returnUrl})}" class="btn btn-sm btn-outline-success me-1 text-nowrap">
+                        <i class="bi bi-plus-lg me-1"></i>Add Team
+                    </a>
+                    <a th:href="@{/leagues/{id}(id=${league.id})}" class="btn btn-sm btn-outline-secondary me-1 text-nowrap">
+                        <i class="bi bi-eye me-1"></i>View
+                    </a>
+                    <a th:href="@{/admin/leagues/{id}/edit(id=${league.id}, returnUrl=${returnUrl})}" class="btn btn-sm btn-outline-primary me-1 text-nowrap">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </a>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteModal"
+                            th:attr="data-entity-name=${league.name}"
+                            th:data-return-url="${returnUrl}"
+                            th:data-delete-url="@{/admin/leagues/{id}/delete(id=${league.id})}">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+        <th:block th:replace="~{shared/pagination :: pagination(${leagues}, @{/admin/leagues(name=${searchQuery})})}"></th:block>
+
+    </div>
+
+</main>
+
+<th:block th:replace="~{admin/fragments :: deleteModal('League')}"></th:block>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/search.js}"></script>
+<script th:src="@{/js/wiki-status.js}"></script>
+</body>
+</html>

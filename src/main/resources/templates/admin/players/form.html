@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head(${editId == null} ? 'New Player' : 'Edit Player')}">
+    <title>Player Form</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <a th:href="${returnUrl}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Players
+        </a>
+        <h2 class="mb-0 d-flex align-items-center">
+            <img id="photoUrlHeadingImg"
+                 th:src="${form.photoUrl}"
+                 alt=""
+                 style="height:36px;width:36px;object-fit:contain;"
+                 class="me-2 rounded"
+                 th:classappend="${form.photoUrl == null or #strings.isEmpty(form.photoUrl)} ? 'd-none' : ''"/>
+            <i id="photoUrlHeadingIcon"
+               class="bi bi-person-circle text-primary me-2"
+               style="font-size:2rem"
+               th:classappend="${form.photoUrl != null and !#strings.isEmpty(form.photoUrl)} ? 'd-none' : ''"></i>
+            <span th:text="${editId == null} ? 'New Player' : 'Edit Player'">Player Form</span>
+        </h2>
+        <a th:if="${editId != null}"
+           th:href="@{/players/{id}(id=${editId})}"
+           class="btn btn-outline-secondary btn-sm ms-auto">
+            <i class="bi bi-eye me-1"></i>View Player
+        </a>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('players')}"></th:block>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-static border-0 shadow-sm">
+                <div class="card-body p-4">
+
+                    <form th:action="@{${editId == null ? '/admin/players' : '/admin/players/' + editId + '/edit'}}"
+                          th:object="${form}"
+                          method="post"
+                          novalidate
+                          data-guard>
+                        <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+
+
+                        <!-- Full Name triggers Wikipedia suggest -->
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label fw-semibold">
+                                Full Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="fullName" th:field="*{fullName}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                                   placeholder="e.g. Lionel Messi"
+                                   th:maxlength="${T(il.ac.jmc.matchday.dto.PlayerForm).FULL_NAME_MAX}"
+                                   autocomplete="off"
+                                   data-wiki-suggest="photoUrl"
+                                   data-wiki-keywords="footballer"/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}"
+                                 th:errors="*{fullName}">Name error</div>
+                        </div>
+
+                        <!-- Team -->
+                        <div class="mb-3">
+                            <label for="teamId" class="form-label fw-semibold">
+                                Team <span class="text-danger">*</span>
+                            </label>
+                            <select id="teamId" th:field="*{teamId}"
+                                    class="form-select"
+                                    th:classappend="${#fields.hasErrors('teamId')} ? 'is-invalid' : ''"
+                                    data-searchable-select
+                                    data-search-placeholder="Search teams...">
+                                <option value="">- select a team -</option>
+                                <option th:each="team : ${teams}"
+                                        th:value="${team.id}"
+                                        th:text="${team.name}">Team</option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('teamId')}"
+                                 th:errors="*{teamId}">Team error</div>
+                        </div>
+
+                        <!-- Position + Shirt Number side by side -->
+                        <div class="row mb-3">
+                            <div class="col-8">
+                                <label for="position" class="form-label fw-semibold">
+                                    Position <span class="text-danger">*</span>
+                                </label>
+                                <select id="position" th:field="*{position}"
+                                        class="form-select"
+                                        th:classappend="${#fields.hasErrors('position')} ? 'is-invalid' : ''"
+                                        data-searchable-select
+                                        data-search-placeholder="Search positions...">
+                                    <option value="">- select -</option>
+                                    <option th:each="pos : ${positions}"
+                                            th:value="${pos}"
+                                            th:text="${pos.displayName}">POS</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('position')}"
+                                     th:errors="*{position}">Position error</div>
+                            </div>
+                            <div class="col-4">
+                                <label for="shirtNumber" class="form-label fw-semibold">Shirt # <span class="text-danger">*</span></label>
+                                <input type="number" id="shirtNumber" th:field="*{shirtNumber}"
+                                       class="form-control"
+                                       th:classappend="${#fields.hasErrors('shirtNumber')} ? 'is-invalid' : ''"
+                                       th:min="${T(il.ac.jmc.matchday.dto.PlayerForm).SHIRT_NUMBER_MIN}"
+                                       th:max="${T(il.ac.jmc.matchday.dto.PlayerForm).SHIRT_NUMBER_MAX}"
+                                       placeholder="10"/>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('shirtNumber')}"
+                                     th:errors="*{shirtNumber}">Shirt number error</div>
+                            </div>
+                        </div>
+
+                        <!-- Photo URL -->
+                        <div class="mb-3">
+                            <label for="photoUrl" class="form-label fw-semibold">Photo URL</label>
+
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox"
+                                       id="photoUrlAutoSuggest"
+                                       th:checked="${editId == null}"/>
+                                <label class="form-check-label small text-muted" for="photoUrlAutoSuggest">
+                                    Auto-fill photo from Wikipedia when name changes
+                                </label>
+                            </div>
+
+                            <input type="url" id="photoUrl" th:field="*{photoUrl}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('photoUrl')} ? 'is-invalid' : ''"
+                                   placeholder="https://example.com/photo.jpg"
+                                   th:maxlength="${T(il.ac.jmc.matchday.dto.PlayerForm).PHOTO_URL_MAX}"
+                                   autocomplete="off"/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('photoUrl')}"
+                                 th:errors="*{photoUrl}">Photo URL error</div>
+                        </div>
+
+                        <!-- Active -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       id="active" th:field="*{active}"/>
+                                <label class="form-check-label fw-semibold" for="active">Active</label>
+                            </div>
+                            <div class="form-text text-muted">Inactive players are hidden from public views.</div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div th:replace="~{admin/fragments :: formButtons('Create Player', 'Save Changes', ${returnUrl}, 'btn-primary', '')}"></div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<th:block th:replace="~{admin/fragments :: formGuardModal}"></th:block>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/wiki-suggest.js}"></script>
+<script th:src="@{/js/form-guard.js}"></script>
+</body>
+</html>

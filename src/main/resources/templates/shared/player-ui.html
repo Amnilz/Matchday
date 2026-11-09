@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!-- PLAYER FILTER BAR fragment
+     Usage:
+     th:replace="~{shared/player-ui :: playerFilterBar(${action}, ${searchQuery}, ${leagues}, ${teams}, ${selectedLeagueIds}, ${selectedTeamIds}, ${positions}, ${selectedPositions}, true, ${sortBy}, ${dir})}" -->
+<form th:fragment="playerFilterBar(action, searchQuery, leagues, teams, selectedLeagueIds, selectedTeamIds, positions, selectedPositions, withSort, sortBy, dir)"
+      th:action="${action}" method="get" class="row g-2 mb-4 align-items-center">
+    <div class="col-sm-4">
+        <label for="player-search" class="visually-hidden">Search</label>
+        <input type="text" id="player-search" name="name" class="form-control"
+               placeholder="Search..."
+               th:value="${searchQuery}"
+               autocomplete="off"
+               data-debounce-search
+               data-search-target="#searchResults"/>
+    </div>
+    <th:block th:replace="~{shared/forms :: entityCheckboxDropdown('leagueId', 'Leagues', ${leagues}, ${selectedLeagueIds}, 'player-league')}"></th:block>
+    <th:block th:replace="~{shared/team-ui :: teamCheckboxDropdown('Teams', ${teams}, ${selectedTeamIds}, 'team')}"></th:block>
+    <th:block th:replace="~{shared/forms :: enumCheckboxDropdown('position', 'Positions', ${positions}, ${selectedPositions}, 'pos')}"></th:block>
+    <input th:if="${withSort}" type="hidden" name="sortBy" th:value="${sortBy}" data-clearable/>
+    <input th:if="${withSort}" type="hidden" name="dir" th:value="${dir}" data-clearable/>
+    <!-- Mobile sort dropdown — only on small screens when sorting is enabled -->
+    <div th:if="${withSort}" class="col-auto d-md-none">
+        <div class="dropdown">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                    data-bs-toggle="dropdown" data-bs-auto-close="true">
+                <span data-sort-label>
+                    <span th:if="${sortBy != null and !#strings.isEmpty(sortBy)}">
+                        <span th:switch="${sortBy}">
+                            <span th:case="'goals'">⚽</span>
+                            <span th:case="'assists'">🅰</span>
+                            <span th:case="'yellows'">🟨</span>
+                            <span th:case="'reds'">🟥</span>
+                        </span>
+                        <span th:text="${dir == 'desc' ? '↓' : '↑'}"></span>
+                    </span>
+                    <span th:unless="${sortBy != null and !#strings.isEmpty(sortBy)}">Sort</span>
+                </span>
+            </button>
+            <ul class="dropdown-menu filter-dropdown-menu">
+                <li th:each="col : ${'goals,assists,yellows,reds'.split(',')}">
+                    <button type="button" class="dropdown-item"
+                            th:attr="data-sort-by=${col},
+                                     data-sort-icon=${col == 'goals' ? '⚽' : col == 'assists' ? '🅰' : col == 'yellows' ? '🟨' : '🟥'}">
+                        <span th:switch="${col}">
+                            <span th:case="'goals'">⚽ Goals</span>
+                            <span th:case="'assists'">🅰 Assists</span>
+                            <span th:case="'yellows'">🟨 Yellows</span>
+                            <span th:case="'reds'">🟥 Reds</span>
+                        </span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="button" id="clearBtn" class="btn btn-outline-secondary"
+                th:classappend="${(searchQuery == null or #strings.isEmpty(searchQuery))
+                                 and selectedLeagueIds.isEmpty()
+                                 and selectedTeamIds.isEmpty()
+                                 and selectedPositions.isEmpty()
+                                 and (not withSort or (sortBy == null or #strings.isEmpty(sortBy)))} ? 'd-none' : ''">
+            Clear
+        </button>
+    </div>
+</form>
+
+<!-- PLAYER NAME CELL fragment -->
+<td th:fragment="playerNameCell(player)">
+    <div class="d-flex align-items-center gap-2">
+        <img th:if="${player.photoUrl != null and !#strings.isEmpty(player.photoUrl)}"
+             th:src="${player.photoUrl}" alt=""
+             style="height:28px;width:28px;object-fit:contain;" class="rounded"/>
+        <i th:unless="${player.photoUrl != null and !#strings.isEmpty(player.photoUrl)}"
+           class="bi bi-person-circle text-muted" style="font-size:1.4rem"></i>
+        <a th:href="${returnUrl != null} ? @{/players/{id}(id=${player.id}, returnUrl=${returnUrl})} : @{/players/{id}(id=${player.id})}"
+           class="fw-semibold text-decoration-none"
+           th:text="${player.fullName}">Name</a>
+    </div>
+</td>
+
+<!-- PLAYER TEAM CELL fragment -->
+<td th:fragment="playerTeamCell(player)" class="text-muted">
+    <th:block th:replace="~{shared/team-ui :: teamLink(${player.team}, 24, true)}"></th:block>
+</td>
+
+<!-- PLAYER POSITION CELL fragment -->
+<td th:fragment="playerPositionCell(player)" class="text-center">
+    <span class="badge bg-secondary" th:text="${player.position.displayName}">POS</span>
+</td>
+
+<!-- PLAYER TABLE HEAD fragment -->
+<tr th:fragment="playerTableHead(sortBy, dir, withStats, withAction)">
+    <th class="text-center" style="width:48px">#</th>
+    <th>Name</th>
+    <th>Team</th>
+    <th class="text-center">Pos</th>
+    <th th:if="${withStats}"
+        th:each="col : ${'goals,assists,yellows,reds'.split(',')}"
+        th:with="active=${sortBy == col}"
+        class="text-center user-select-none d-md-table-cell"
+        th:classappend="${!active ? 'd-none' : ''}"
+        style="cursor:pointer; white-space:nowrap"
+        th:data-sort-by="${col}">
+        <span th:switch="${col}">
+            <span th:case="'goals'" title="Goals">⚽</span>
+            <span th:case="'assists'" title="Assists">🅰</span>
+            <span th:case="'yellows'" title="Yellow cards">🟨</span>
+            <span th:case="'reds'" title="Red cards">🟥</span>
+        </span>
+        <span th:if="${active}" class="ms-1 small"
+              th:text="${dir == 'asc'} ? '↑' : '↓'"></span>
+    </th>
+    <th th:if="${withAction}"></th>
+</tr>
+
+<!-- TOP STAT LEADERBOARD CARD fragment
+     Renders a compact ranked leaderboard card for a single player stat.
+     statField: one of 'goals', 'assists', 'yellowCards', 'redCards'
+     colorClass: Bootstrap text color class, e.g. 'text-success'
+     Usage: th:replace="~{shared/player-ui :: topStatCard('⚽ Top Scorers', ${topScorers}, 'goals', 'text-success')}" -->
+<section th:fragment="topStatCard(title, items, statField, colorClass, viewAllUrl)" class="col-sm-6 col-xl-3">
+    <div class="card h-100 shadow-sm">
+        <div class="card-header app-card-header d-flex justify-content-between align-items-center">
+            <span th:text="${title}">Title</span>
+            <a th:href="${viewAllUrl}" class="text-white-50 small text-decoration-none">See all &rarr;</a>
+        </div>
+        <div th:if="${items.isEmpty()}" class="card-body text-muted small">No data yet.</div>
+        <div th:unless="${items.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <tbody>
+                <tr th:each="item, iter : ${items}">
+                    <td class="text-muted ps-3" th:text="${iter.index + 1}">1</td>
+                    <th:block th:replace="~{shared/player-ui :: playerNameCell(${item.player})}"></th:block>
+                    <td><th:block th:replace="~{shared/team-ui :: teamLogoOrNameLink(${item.player.team}, 20)}"></th:block></td>
+                    <td th:class="'text-end pe-3 fw-bold ' + ${colorClass}">
+                        <span th:switch="${statField}">
+                            <span th:case="'goals'"       th:text="${item.stats.goals}">0</span>
+                            <span th:case="'assists'"     th:text="${item.stats.assists}">0</span>
+                            <span th:case="'yellowCards'" th:text="${item.stats.yellowCards}">0</span>
+                            <span th:case="'redCards'"    th:text="${item.stats.redCards}">0</span>
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- PLAYER RESULT ROW fragment -->
+<tr th:fragment="playerRow(player, stats, withAction, sortBy)">
+    <td class="text-center text-muted" th:text="${player.shirtNumber}">0</td>
+    <th:block th:replace="~{shared/player-ui :: playerNameCell(${player})}"></th:block>
+    <th:block th:replace="~{shared/player-ui :: playerTeamCell(${player})}"></th:block>
+    <th:block th:replace="~{shared/player-ui :: playerPositionCell(${player})}"></th:block>
+    <th:block th:if="${stats != null}">
+        <td class="text-center d-md-table-cell" th:classappend="${sortBy != 'goals'   ? 'd-none' : ''}" th:text="${stats.goals}">0</td>
+        <td class="text-center d-md-table-cell" th:classappend="${sortBy != 'assists' ? 'd-none' : ''}" th:text="${stats.assists}">0</td>
+        <td class="text-center d-md-table-cell" th:classappend="${sortBy != 'yellows' ? 'd-none' : ''}" th:text="${stats.yellowCards}">0</td>
+        <td class="text-center d-md-table-cell" th:classappend="${sortBy != 'reds'    ? 'd-none' : ''}" th:text="${stats.redCards}">0</td>
+    </th:block>
+    <td th:if="${withAction}" class="text-end">
+        <a th:href="${returnUrl != null} ? @{/players/{id}(id=${player.id}, returnUrl=${returnUrl})} : @{/players/{id}(id=${player.id})}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-eye me-1"></i>View
+        </a>
+    </td>
+</tr>
+
+</html>

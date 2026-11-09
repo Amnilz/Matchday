@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Home')}">
+    <title>Home</title> </head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-5 flex-grow-1">
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold" th:text="'Welcome to ' + ${appName}">Welcome to Matchday</h2>
+        <p class="lead text-muted">Follow multiple leagues — browse teams, players, results and live standings.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <a th:href="@{/teams}" class="text-decoration-none">
+                <div class="card card-accent-green text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-shield-fill fs-1 text-success"></i>
+                        <h6 class="card-title mt-2">Teams</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <a th:href="@{/leagues}" class="text-decoration-none">
+                <div class="card card-accent-warn text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-trophy-fill fs-1 text-warning"></i>
+                        <h6 class="card-title mt-2">Leagues</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <a th:href="@{/players}" class="text-decoration-none">
+                <div class="card card-accent text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-person-fill fs-1 text-primary"></i>
+                        <h6 class="card-title mt-2">Players</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <a th:href="@{/matches}" class="text-decoration-none">
+                <div class="card card-accent-warn text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-calendar3 fs-1 text-warning"></i>
+                        <h6 class="card-title mt-2">Matches</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <a th:href="@{/league-table}" class="text-decoration-none">
+                <div class="card card-accent-danger text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-table fs-1 text-danger"></i>
+                        <h6 class="card-title mt-2">Table</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <a th:href="@{/search}" class="text-decoration-none">
+                <div class="card card-accent-muted text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-search fs-1 text-secondary"></i>
+                        <h6 class="card-title mt-2">Search</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <section class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header app-card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar3 me-1"></i>Upcoming Matches</span>
+                    <a th:href="@{/matches}" class="text-white-50 small text-decoration-none">View all &rarr;</a>
+                </div>
+                <div th:if="${upcomingMatches.isEmpty()}" class="card-body text-muted">
+                    No upcoming matches.
+                </div>
+                <div th:unless="${upcomingMatches.isEmpty()}" class="list-group list-group-flush">
+                    <a th:each="match : ${upcomingMatches}"
+                       th:href="@{/matches/{id}(id=${match.id}, returnUrl=${returnUrl})}"
+                       class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between gap-2">
+                            <span class="fw-semibold d-flex align-items-center gap-2">
+                                <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${match.homeTeam}, 20)}"></th:block>
+                                <span class="text-muted">vs</span>
+                                <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${match.awayTeam}, 20)}"></th:block>
+                            </span>
+                            <span class="text-muted small"
+                                  th:text="${#temporals.format(match.matchDate, 'dd/MM')}">date</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header app-card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-1"></i>Recent Results</span>
+                    <a th:href="@{/matches}" class="text-white-50 small text-decoration-none">View all &rarr;</a>
+                </div>
+                <div th:if="${recentResults.isEmpty()}" class="card-body text-muted">
+                    No completed matches.
+                </div>
+                <div th:unless="${recentResults.isEmpty()}" class="list-group list-group-flush">
+                    <a th:each="match : ${recentResults}"
+                       th:href="@{/matches/{id}(id=${match.id}, returnUrl=${returnUrl})}"
+                       class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between gap-2">
+                            <span class="d-flex align-items-center gap-2">
+                                <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${match.homeTeam}, 20)}"></th:block>
+                                <span class="fw-bold">
+                                    <th:block th:replace="~{shared/match-ui :: matchScore(${match})}"></th:block>
+                                </span>
+                                <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${match.awayTeam}, 20)}"></th:block>
+                            </span>
+                            <span class="text-muted small"
+                                  th:text="${#temporals.format(match.matchDate, 'dd/MM')}">date</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header app-card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-trophy-fill me-1"></i>Top Teams</span>
+                    <a th:if="${topLeague != null}"
+                       th:href="@{/leagues/{id}/table(id=${topLeague.id})}"
+                       class="text-white-50 small text-decoration-none d-flex align-items-center gap-1">
+                        <th:block th:replace="~{shared/league-ui :: leagueLogo(${topLeague}, 18, '')}"></th:block>
+                        <span th:text="${topLeague.name}">League</span>
+                    </a>
+                </div>
+                <div th:if="${topRows.isEmpty()}" class="card-body text-muted">
+                    No teams found.
+                </div>
+                <div th:unless="${topRows.isEmpty()}" class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th class="text-end">Pts</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="row, iter : ${topRows}">
+                            <td class="text-muted" th:text="${iter.index + 1}">1</td>
+                            <td>
+                                <th:block th:replace="~{shared/team-ui :: teamLink(${row.team()}, 24, false)}"></th:block>
+                            </td>
+                            <td class="text-end fw-bold" th:text="${row.stats().points()}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+    <!-- Top Stats -->
+    <div class="row g-4 mt-2">
+        <th:block th:replace="~{shared/player-ui :: topStatCard('⚽ Top Scorers',   ${topScorers},   'goals',       'text-success', @{/players(sortBy='goals',dir='desc')})}"></th:block>
+        <th:block th:replace="~{shared/player-ui :: topStatCard('🅰 Top Assisters', ${topAssisters}, 'assists',     'text-primary', @{/players(sortBy='assists',dir='desc')})}"></th:block>
+        <th:block th:replace="~{shared/player-ui :: topStatCard('🟨 Yellow Cards',  ${topYellows},   'yellowCards', 'text-warning', @{/players(sortBy='yellows',dir='desc')})}"></th:block>
+        <th:block th:replace="~{shared/player-ui :: topStatCard('🟥 Red Cards',     ${topReds},      'redCards',    'text-danger',  @{/players(sortBy='reds',dir='desc')})}"></th:block>
+    </div>
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+</body>
+</html>

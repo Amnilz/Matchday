@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head(${editId == null} ? 'New Team' : 'Edit Team')}">
+    <title>Team Form</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <a th:href="${returnUrl}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Teams
+        </a>
+        <h2 class="mb-0 d-flex align-items-center">
+            <!-- Heading logo: shows team image when available, falls back to shield icon -->
+            <img id="logoUrlHeadingImg"
+                 th:src="${form.logoUrl}"
+                 alt=""
+                 style="height:36px; width:36px; object-fit:contain;"
+                 class="me-2 rounded"
+                 th:classappend="${form.logoUrl == null or #strings.isEmpty(form.logoUrl)} ? 'd-none' : ''"/>
+            <i id="logoUrlHeadingIcon"
+               class="bi bi-shield-fill text-success me-2"
+               th:classappend="${form.logoUrl != null and !#strings.isEmpty(form.logoUrl)} ? 'd-none' : ''"></i>
+            <span th:text="${editId == null} ? 'New Team' : 'Edit Team'">Team Form</span>
+        </h2>
+        <div th:if="${editId != null}" class="ms-auto d-flex gap-2">
+            <a th:href="@{/teams/{id}(id=${editId})}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-eye me-1"></i>View Team
+            </a>
+            <a th:href="@{/admin/players/new(teamId=${editId})}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-person-plus me-1"></i>Add Player
+            </a>
+            <a th:href="@{/admin/players(teamId=${editId})}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-people-fill me-1"></i>Edit Squad
+            </a>
+        </div>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('teams')}"></th:block>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-static border-0 shadow-sm">
+                <div class="card-body p-4">
+
+                    <form th:action="@{${editId == null ? '/admin/teams' : '/admin/teams/' + editId + '/edit'}}"
+                          th:object="${form}"
+                          method="post"
+                          novalidate
+                          data-guard>
+                        <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+
+                        <!-- Name triggers Wikipedia suggest -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold">
+                                Team Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="name" th:field="*{name}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                   placeholder="e.g. Arsenal FC"
+                                   th:maxlength="${T(il.ac.jmc.matchday.dto.TeamForm).NAME_MAX}"
+                                   autocomplete="off"
+                                   data-wiki-suggest="logoUrl"
+                                   data-wiki-keywords="football club"/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}"
+                                 th:errors="*{name}">Name error</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <textarea id="description" th:field="*{description}"
+                                      class="form-control"
+                                      th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                                      rows="3"
+                                      placeholder="Short description of the team (optional)"
+                                      th:maxlength="${T(il.ac.jmc.matchday.dto.TeamForm).DESCRIPTION_MAX}"></textarea>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}"
+                                 th:errors="*{description}">Description error</div>
+                        </div>
+
+                        <!-- Logo URL -->
+                        <div class="mb-4">
+                            <label for="logoUrl" class="form-label fw-semibold">Logo URL</label>
+
+                            <!-- Auto-suggest checkbox -->
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox"
+                                       id="logoUrlAutoSuggest"
+                                       th:checked="${editId == null}"/>
+                                <label class="form-check-label small text-muted" for="logoUrlAutoSuggest">
+                                    Auto-fill logo from Wikipedia when name changes
+                                </label>
+                            </div>
+
+                            <input type="url" id="logoUrl" th:field="*{logoUrl}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('logoUrl')} ? 'is-invalid' : ''"
+                                   placeholder="https://example.com/logo.png"
+                                   th:maxlength="${T(il.ac.jmc.matchday.dto.TeamForm).LOGO_URL_MAX}"
+                                   autocomplete="off"/>
+                             <div class="invalid-feedback" th:if="${#fields.hasErrors('logoUrl')}"
+                                 th:errors="*{logoUrl}">Logo URL error</div>
+                        </div>
+
+                        <div class="mb-4" th:if="${editId == null}">
+                            <label for="leagueId" class="form-label fw-semibold">League</label>
+                            <select id="leagueId" th:field="*{leagueId}"
+                                    class="form-select"
+                                    th:classappend="${#fields.hasErrors('leagueId')} ? 'is-invalid' : ''"
+                                    data-searchable-select
+                                    data-search-placeholder="Search leagues...">
+                                <option value="">No league yet</option>
+                                <option th:each="league : ${leagues}"
+                                        th:value="${league.id}"
+                                        th:text="${league.name}">League</option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('leagueId')}"
+                                 th:errors="*{leagueId}">League error</div>
+                            <input type="hidden" th:field="*{returnToLeague}"/>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div th:replace="~{admin/fragments :: formButtons('Create Team', 'Save Changes', ${returnUrl}, 'btn-success', '')}"></div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<th:block th:replace="~{admin/fragments :: formGuardModal}"></th:block>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/wiki-suggest.js}"></script>
+<script th:src="@{/js/form-guard.js}"></script>
+</body>
+</html>

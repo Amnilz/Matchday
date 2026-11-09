@@ -1,0 +1,247 @@
+/* ─── App custom properties ──────────────────────────────────────── */
+:root {
+    --app-navy:        #0f172a;
+    --app-navy-mid:    #1e293b;
+    --app-accent:      #3b82f6;
+    --app-accent-hov:  #2563eb;
+    --app-green:       #16a34a;
+    --app-green-hov:   #15803d;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────── */
+body {
+    background-color: #e2e8f0;
+}
+
+/* ─── Header & Navbar ────────────────────────────────────────────── */
+.app-header {
+    background-color: var(--app-navy);
+}
+
+.app-nav {
+    background-color: var(--app-navy-mid);
+}
+
+.app-nav .nav-link {
+    opacity: .85;
+    transition: opacity .15s ease;
+}
+
+.app-nav .nav-link:hover,
+.app-nav .nav-link.active {
+    opacity: 1;
+}
+
+.app-nav .nav-link.active {
+    border-bottom: 2px solid rgba(255, 255, 255, .7);
+}
+
+.app-card-header {
+    background-color: var(--app-navy) !important;
+    color: #fff;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────── */
+.card {
+    border: none;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.card:not(.card-static):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .12), 0 4px 6px rgba(0, 0, 0, .07) !important;
+}
+
+.card-static:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05) !important;
+}
+
+/* Colored top-border accent variants */
+.card-accent        { border-top: 4px solid var(--app-accent)  !important; }
+.card-accent-green  { border-top: 4px solid var(--app-green)   !important; }
+.card-accent-warn   { border-top: 4px solid #f59e0b            !important; }
+.card-accent-danger { border-top: 4px solid #ef4444            !important; }
+.card-accent-info   { border-top: 4px solid #0ea5e9            !important; }
+.card-accent-muted  { border-top: 4px solid #94a3b8            !important; }
+
+/* ─── Tables ─────────────────────────────────────────────────────── */
+.table {
+    --bs-table-hover-bg: rgba(59, 130, 246, .05);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────── */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.btn-success {
+    background-color: var(--app-green);
+    border-color: var(--app-green);
+}
+
+.btn-success:hover,
+.btn-success:focus-visible {
+    background-color: var(--app-green-hov);
+    border-color: var(--app-green-hov);
+}
+
+.btn-outline-success {
+    color: var(--app-green);
+    border-color: var(--app-green);
+}
+
+.btn-outline-success:hover {
+    background-color: var(--app-green);
+    border-color: var(--app-green);
+    color: #fff;
+}
+
+/* ─── Form controls ──────────────────────────────────────────────── */
+.form-control,
+.form-select {
+    border-radius: 0.5rem;
+    border-color: #d1d5db;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--app-accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+/* ─── Badges ─────────────────────────────────────────────────────── */
+.badge {
+    border-radius: 0.4rem;
+    font-weight: 500;
+    letter-spacing: .02em;
+}
+
+/* ─── Password toggle ────────────────────────────────────────────── */
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper .form-control {
+    padding-right: 2.5rem;
+    background-image: none !important;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    color: #6c757d;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.password-toggle:hover {
+    color: #343a40;
+}
+
+.password-wrapper.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+
+/* ─── Player avatar ─────────────────────────────────────────────── */
+.player-avatar {
+    width: 4.5rem;
+    height: 4.5rem;
+    flex-shrink: 0;
+}
+
+/* ─── Filter dropdown menu ───────────────────────────────────────── */
+.filter-dropdown-menu {
+    min-width: 11.25rem;
+}
+
+/* ─── Team link ──────────────────────────────────────────────────── */
+.team-link {
+    color: inherit;
+}
+
+.team-link:hover .team-link-name {
+    text-decoration: underline;
+}
+
+.team-link-logo {
+    flex: 0 0 auto;
+    object-fit: contain;
+    object-position: center;
+}
+
+/* ─── Searchable select ──────────────────────────────────────────── */
+.searchable-select-source {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.searchable-select .dropdown-menu {
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.match-events-table-wrapper {
+    overflow: visible;
+}
+
+.match-events-table-wrapper .searchable-select .dropdown-menu {
+    z-index: 1080;
+}
+
+/* ─── Page navigation spinner ────────────────────────────────────── */
+#page-spinner {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(241, 245, 249, .94);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: .75rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .14s ease, visibility .14s ease;
+}
+
+#page-spinner.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+#page-spinner .spinner-icon {
+    font-size: 3rem;
+    animation: spin-icon 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin-icon {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    #page-spinner {
+        transition: none;
+    }
+
+    #page-spinner .spinner-icon {
+        animation: none;
+    }
+}

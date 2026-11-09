@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Shared pagination for Spring Data Page values. Pass a base URL without page=. -->
+<nav th:fragment="pagination(page, baseUrl)"
+     th:if="${page != null and page.totalPages > 1}"
+     aria-label="Page navigation"
+     class="d-flex flex-column align-items-center mt-3">
+
+    <ul class="pagination mb-1"
+        th:with="sep=${baseUrl.contains('?') ? '&' : '?'},
+                 winStart=${page.number > 2 ? page.number - 2 : 0},
+                 winEnd=${page.number + 2 < page.totalPages ? page.number + 2 : page.totalPages - 1}">
+
+        <!-- Previous -->
+        <li th:class="'page-item' + (${page.first} ? ' disabled' : '')">
+            <a class="page-link"
+               th:href="${page.first ? '#' : (baseUrl + sep + 'page=' + (page.number - 1))}"
+               aria-label="Previous">&laquo;</a>
+        </li>
+
+        <!-- First page + ellipsis when window doesn't start at 0 -->
+        <li th:if="${winStart > 0}" class="page-item">
+            <a class="page-link" th:href="${baseUrl + sep + 'page=0'}">1</a>
+        </li>
+        <li th:if="${winStart > 1}" class="page-item disabled">
+            <span class="page-link">&hellip;</span>
+        </li>
+
+        <!-- Page window (current ± 2, clamped to valid range) -->
+        <li th:each="i : ${#numbers.sequence(winStart, winEnd)}"
+            th:class="'page-item' + (${i == page.number} ? ' active' : '')">
+            <a class="page-link"
+               th:href="${baseUrl + sep + 'page=' + i}"
+               th:text="${i + 1}">1</a>
+        </li>
+
+        <!-- Ellipsis + last page when window doesn't reach the end -->
+        <li th:if="${winEnd < page.totalPages - 2}" class="page-item disabled">
+            <span class="page-link">&hellip;</span>
+        </li>
+        <li th:if="${winEnd < page.totalPages - 1}" class="page-item">
+            <a class="page-link"
+               th:href="${baseUrl + sep + 'page=' + (page.totalPages - 1)}"
+               th:text="${page.totalPages}">N</a>
+        </li>
+
+        <!-- Next -->
+        <li th:class="'page-item' + (${page.last} ? ' disabled' : '')">
+            <a class="page-link"
+               th:href="${page.last ? '#' : (baseUrl + sep + 'page=' + (page.number + 1))}"
+               aria-label="Next">&raquo;</a>
+        </li>
+
+    </ul>
+
+    <p class="text-muted small mb-0">
+        Page <span th:text="${page.number + 1}">1</span> of
+        <span th:text="${page.totalPages}">1</span>
+        &mdash; <span th:text="${page.totalElements}">0</span> total
+    </p>
+
+</nav>
+
+</html>

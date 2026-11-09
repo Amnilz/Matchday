@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head(${player.fullName})}">
+    <title>Player</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="${backUrl}" th:text="${backLabel}">Players</a></li>
+            <li class="breadcrumb-item active" th:text="${player.fullName}">Player</li>
+        </ol>
+    </nav>
+
+    <!-- Player header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="player-avatar">
+            <img th:if="${player.photoUrl != null and !#strings.isEmpty(player.photoUrl)}"
+                 th:src="${player.photoUrl}"
+                 th:alt="${player.fullName}"
+                 class="rounded-circle w-100 h-100"
+                 style="object-fit:cover; object-position:top"/>
+            <div th:unless="${player.photoUrl != null and !#strings.isEmpty(player.photoUrl)}"
+                 class="w-100 h-100 rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center fw-bold fs-4"
+                 th:text="'#' + ${player.shirtNumber}">
+                #0
+            </div>
+        </div>
+        <div>
+            <h2 class="mb-1" th:text="${player.fullName}">Player Name</h2>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-secondary fs-6" th:text="${player.position}">POS</span>
+                <span class="text-muted">
+                    <th:block th:replace="~{shared/team-ui :: teamLink(${player.team}, 24, false)}"></th:block>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="row g-2 mb-4 text-center">
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', '', '', ${teamStats.played()}, 'Team Matches')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', 'border-success', 'text-success', ${teamStats.wins()}, 'Team Wins')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', '', '', ${teamStats.draws()}, 'Team Draws')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', 'border-danger', 'text-danger', ${teamStats.losses()}, 'Team Losses')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', '', '', ${stats.goals}, '⚽ Goals')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', '', '', ${stats.assists}, '🅰 Assists')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', '', '', ${stats.yellowCards}, '🟨 Yellows')}"></th:block>
+        <th:block th:replace="~{shared/stats-ui :: statCard('col-6 col-md-3 col-xl', '', '', ${stats.redCards}, '🟥 Reds')}"></th:block>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3" id="playerTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-results">
+                <i class="bi bi-clock-history me-1"></i>Results
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upcoming">
+                <i class="bi bi-calendar3 me-1"></i>Upcoming
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-events">
+                <i class="bi bi-lightning-fill me-1"></i>Events
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- Results -->
+        <div class="tab-pane fade show active" id="tab-results">
+            <div th:if="${completedMatches.isEmpty()}" class="text-muted">No completed matches.</div>
+            <div th:unless="${completedMatches.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Home</th>
+                        <th class="text-center">Score</th>
+                        <th>Away</th>
+                        <th class="text-center d-none d-md-table-cell">Result</th>
+                        <th th:if="${stats.goals > 0 or stats.assists > 0}" class="text-center">Contribution</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="m : ${completedMatches}">
+                        <th:block th:replace="~{shared/match-ui :: matchResultCells(${m}, ${player.team})}"></th:block>
+                        <td th:if="${stats.goals > 0 or stats.assists > 0}" class="text-center">
+                            <th:block th:each="e : ${eventsByMatch.get(m.id)}">
+                                <span th:if="${e.type.name() == 'GOAL'}"   title="Goal">⚽</span>
+                                <span th:if="${e.type.name() == 'ASSIST'}" title="Assist">🅰</span>
+                            </th:block>
+                        </td>
+                        <td class="text-end">
+                            <a th:href="@{/matches/{id}(id=${m.id}, returnUrl=${returnUrl})}"
+                               class="btn btn-sm btn-outline-secondary">View</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- Upcoming -->
+        <div class="tab-pane fade" id="tab-upcoming">
+            <div th:if="${upcomingMatches.isEmpty()}" class="text-muted">No upcoming matches.</div>
+            <div th:unless="${upcomingMatches.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <th:block th:replace="~{shared/match-ui :: matchUpcomingHead}"></th:block>
+                </thead>
+                <tbody>
+                    <th:block th:each="m : ${upcomingMatches}">
+                        <th:block th:replace="~{shared/match-ui :: matchUpcomingRow(${m}, ${player.team.id})}"></th:block>
+                    </th:block>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- Events -->
+        <div class="tab-pane fade" id="tab-events">
+            <div th:if="${events.isEmpty()}" class="text-muted">No match events recorded.</div>
+            <div th:unless="${events.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Match</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center">Event</th>
+                        <th class="text-center">Min</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${events}">
+                        <td class="text-muted small"
+                            th:text="${#temporals.format(e.match.matchDate, 'dd/MM/yyyy')}">Date</td>
+                        <td>
+                            <th:block th:replace="~{shared/team-ui :: teamLink(${e.match.homeTeam}, 20, true)}"></th:block>
+                            <span class="text-muted mx-1">vs</span>
+                            <th:block th:replace="~{shared/team-ui :: teamLink(${e.match.awayTeam}, 20, true)}"></th:block>
+                        </td>
+                        <td class="text-center">
+                            <th:block th:replace="~{shared/match-ui :: matchScore(${e.match})}"></th:block>
+                        </td>
+                        <td class="text-center">
+                            <span th:if="${e.type.name() == 'GOAL'}"        class="badge bg-success">⚽ Goal</span>
+                            <span th:if="${e.type.name() == 'ASSIST'}"      class="badge bg-info text-dark">🅰 Assist</span>
+                            <span th:if="${e.type.name() == 'YELLOW_CARD'}" class="badge bg-warning text-dark">🟨 Yellow</span>
+                            <span th:if="${e.type.name() == 'RED_CARD'}"    class="badge bg-danger">🟥 Red</span>
+                        </td>
+                        <td class="text-center text-muted"
+                            th:text="${e.minute != null ? e.minute : '-'}">-</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/tabs.js}"></script>
+</body>
+</html>

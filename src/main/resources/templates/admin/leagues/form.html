@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head(${editId == null} ? 'New League' : 'Edit League')}">
+    <title>League Form</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <a th:href="${returnUrl}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Leagues
+        </a>
+        <h2 class="mb-0 d-flex align-items-center">
+            <img id="logoUrlHeadingImg"
+                 th:src="${form.logoUrl}"
+                 alt=""
+                 style="height:36px; width:36px; object-fit:contain;"
+                 class="me-2 rounded"
+                 th:classappend="${form.logoUrl == null or #strings.isEmpty(form.logoUrl)} ? 'd-none' : ''"/>
+            <i id="logoUrlHeadingIcon"
+               class="bi bi-trophy-fill text-warning me-2"
+               th:classappend="${form.logoUrl != null and !#strings.isEmpty(form.logoUrl)} ? 'd-none' : ''"></i>
+            <span th:text="${editId == null} ? 'New League' : 'Edit League'">League</span>
+        </h2>
+        <a th:if="${editId != null}"
+           th:href="@{/leagues/{id}(id=${editId})}"
+           class="btn btn-outline-secondary btn-sm ms-auto">
+            <i class="bi bi-eye me-1"></i>View League
+        </a>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('leagues')}"></th:block>
+    <th:block th:replace="~{admin/fragments :: flashMessages}"></th:block>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card card-static border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form th:action="@{${editId == null ? '/admin/leagues' : '/admin/leagues/' + editId + '/edit'}}"
+                          th:object="${form}"
+                          method="post"
+                          novalidate
+                          data-guard>
+                        <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold">
+                                League Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="name" th:field="*{name}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                   placeholder="e.g. Premier League"
+                                   th:maxlength="${T(il.ac.jmc.matchday.dto.LeagueForm).NAME_MAX}"
+                                   autocomplete="off"
+                                   data-wiki-suggest="logoUrl"
+                                   data-wiki-keywords="association football league"/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}"
+                                 th:errors="*{name}">Name error</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <textarea id="description" th:field="*{description}"
+                                      class="form-control"
+                                      th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                                      rows="3"
+                                      th:maxlength="${T(il.ac.jmc.matchday.dto.LeagueForm).DESCRIPTION_MAX}"></textarea>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}"
+                                 th:errors="*{description}">Description error</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="logoUrl" class="form-label fw-semibold">Logo URL</label>
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox"
+                                       id="logoUrlAutoSuggest"
+                                       th:checked="${editId == null}"/>
+                                <label class="form-check-label small text-muted" for="logoUrlAutoSuggest">
+                                    Auto-fill logo from Wikipedia when name changes
+                                </label>
+                            </div>
+                            <input type="url" id="logoUrl" th:field="*{logoUrl}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('logoUrl')} ? 'is-invalid' : ''"
+                                   placeholder="https://example.com/logo.png"
+                                   th:maxlength="${T(il.ac.jmc.matchday.dto.LeagueForm).LOGO_URL_MAX}"
+                                   autocomplete="off"/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('logoUrl')}"
+                                 th:errors="*{logoUrl}">Logo URL error</div>
+                            <div id="logoUrlStatus" class="form-text"></div>
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="active" th:field="*{active}"/>
+                            <label class="form-check-label" for="active">Active league</label>
+                        </div>
+
+                        <div th:replace="~{admin/fragments :: formButtons('Create League', 'Save Changes', ${returnUrl}, 'btn-warning', '')}"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6" th:if="${editId != null}">
+            <div id="league-teams" class="card card-static border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                        <h3 class="h5 mb-0"><i class="bi bi-shield-fill text-success me-2"></i>Teams in League</h3>
+                        <div class="d-flex gap-2 flex-wrap justify-content-end">
+                            <a th:href="@{/admin/teams(leagueId=${editId})}" class="btn btn-sm btn-outline-secondary text-nowrap">
+                                <i class="bi bi-list-ul me-1"></i>Edit Teams
+                            </a>
+                            <a th:href="@{/admin/teams/new(leagueId=${editId})}" class="btn btn-sm btn-outline-success text-nowrap">
+                                <i class="bi bi-plus-lg me-1"></i>New Team
+                            </a>
+                        </div>
+                    </div>
+
+                    <form th:if="${!availableTeams.isEmpty()}"
+                          th:action="@{/admin/leagues/{id}/teams(id=${editId})}"
+                          method="post"
+                          class="row g-2 mb-3 align-items-center"
+                          novalidate
+                          data-guard-ignore>
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <div class="col">
+                            <select id="leagueTeamSelect" name="teamId" class="form-select" required
+                                    data-searchable-select
+                                    data-search-placeholder="Search teams...">
+                                <option value="">-- add team --</option>
+                                <option th:each="team : ${availableTeams}"
+                                        th:value="${team.id}"
+                                        th:text="${team.name}">Team</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-success text-nowrap">
+                                <i class="bi bi-plus-lg me-1"></i>Add
+                            </button>
+                        </div>
+                    </form>
+
+                    <div th:if="${leagueTeams.isEmpty()}" class="alert alert-info mb-0">
+                        No teams assigned yet.
+                    </div>
+
+                    <div th:unless="${leagueTeams.isEmpty()}" class="list-group">
+                        <div th:each="team : ${leagueTeams}"
+                             class="list-group-item d-flex align-items-center justify-content-between gap-3">
+                            <span class="fw-semibold">
+                                <th:block th:replace="~{shared/team-ui :: teamLink(${team}, 24, false)}"></th:block>
+                            </span>
+                            <form th:action="@{/admin/leagues/{leagueId}/teams/{teamId}/remove(leagueId=${editId}, teamId=${team.id})}"
+                                  method="post"
+                                  class="mb-0"
+                                  data-guard-ignore>
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-lg me-1"></i>Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<th:block th:replace="~{admin/fragments :: formGuardModal}"></th:block>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/wiki-suggest.js}"></script>
+<script th:src="@{/js/form-guard.js}"></script>
+</body>
+</html>

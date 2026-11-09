@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Players')}">
+    <title>Players</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="mb-3">
+        <h2 class="mb-0"><i class="bi bi-person-fill text-primary me-2"></i>Players</h2>
+    </div>
+
+    <th:block th:with="action=@{/players}"
+              th:replace="~{shared/player-ui :: playerFilterBar(${action}, ${searchQuery}, ${leagues}, ${teams}, ${selectedLeagueIds}, ${selectedTeamIds}, ${positions}, ${selectedPositions}, true, ${sortBy}, ${dir})}"></th:block>
+
+    <div id="searchResults" th:fragment="results">
+
+        <p th:if="${!players.isEmpty() and
+                   (!selectedTeamIds.isEmpty() or !selectedPositions.isEmpty()
+                    or !selectedLeagueIds.isEmpty()
+                    or (searchQuery != null and !#strings.isEmpty(searchQuery)))}"
+           class="text-muted small">
+            Showing <strong th:text="${players.totalElements}">0</strong> player(s)
+        </p>
+
+        <div th:if="${players.isEmpty()}" class="alert alert-info">No players found.</div>
+
+        <div th:unless="${players.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <th:block th:replace="~{shared/player-ui :: playerTableHead(${sortBy}, ${dir}, true, false)}"></th:block>
+                </thead>
+                <tbody>
+                    <th:block th:each="item : ${players}">
+                        <th:block th:replace="~{shared/player-ui :: playerRow(${item.player}, ${item.stats}, false, ${sortBy})}"></th:block>
+                    </th:block>
+                </tbody>
+            </table>
+        </div>
+
+        <th:block th:replace="~{shared/pagination :: pagination(${players}, @{/players(name=${searchQuery}, leagueId=${selectedLeagueIds}, teamId=${selectedTeamIds}, position=${selectedPositions}, sortBy=${sortBy}, dir=${dir})})}"></th:block>
+
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/search.js}"></script>
+</body>
+</html>

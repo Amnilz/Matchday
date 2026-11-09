@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<th:block th:fragment="commentItems(items)">
+    <div th:each="item : ${items}" th:with="comment=${item.comment}" class="comment-thread-item">
+        <article th:id="${'comment-' + comment.id}" class="border rounded p-3 bg-light">
+            <div class="d-flex justify-content-between gap-2 flex-wrap mb-2">
+                <span th:if="${!comment.deleted}" class="fw-semibold">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <th:block th:replace="~{shared/comment-ui :: commentAuthorName(${comment.user})}"></th:block>
+                </span>
+                <span th:if="${comment.deleted}" class="text-muted fst-italic">Deleted comment</span>
+                <time class="text-muted small"
+                      th:text="${#temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm')}">date</time>
+            </div>
+            <p th:if="${!comment.deleted}" class="mb-0" th:text="${comment.content}">Comment content</p>
+            <p th:if="${comment.deleted}" class="mb-0 text-muted fst-italic">This comment was deleted.</p>
+
+            <div th:if="${!comment.deleted}" class="d-flex gap-2 flex-wrap mt-3">
+                <button sec:authorize="isAuthenticated()"
+                        th:if="${userBlockedFromComments != true}"
+                        type="button" class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="collapse"
+                        th:attr="data-bs-target=${'#reply-form-' + comment.id}, aria-controls=${'reply-form-' + comment.id}">
+                    <i class="bi bi-reply-fill me-1"></i>Reply
+                </button>
+                <form sec:authorize="isAuthenticated()"
+                      th:if="${userBlockedFromComments != true and currentUsername != comment.user.username}"
+                      th:id="${'report-comment-form-' + comment.id}"
+                      th:action="@{/comments/{id}/report(id=${comment.id})}" method="post" class="mb-0">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="matchId" th:value="${match.id}"/>
+                    <button type="button" class="btn btn-sm btn-outline-warning"
+                            data-bs-toggle="modal"
+                            data-bs-target="#confirmSubmitModal"
+                            th:attr="data-confirm-form=${'report-comment-form-' + comment.id}"
+                            data-confirm-title="Report Comment"
+                            data-confirm-message="Report this comment for admin review?"
+                            data-confirm-label="Report"
+                            data-confirm-button-class="btn-warning"
+                            data-confirm-icon="bi bi-flag-fill text-warning me-2"
+                            data-confirm-button-icon="bi bi-flag-fill me-1">
+                        <i class="bi bi-flag-fill me-1"></i>Report
+                    </button>
+                </form>
+                <th:block th:replace="~{shared/comment-ui :: ownerActionButtons(${comment}, ${match.id}, null)}"></th:block>
+            </div>
+
+            <div sec:authorize="isAuthenticated()"
+                 th:if="${userBlockedFromComments != true and !comment.deleted}"
+                 th:id="${'reply-form-' + comment.id}"
+                 class="collapse mt-3 border-top pt-2">
+                <form th:action="@{/comments/{id}/replies(id=${comment.id})}" method="post" class="mb-0">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="matchId" th:value="${match.id}"/>
+                    <label th:for="${'reply-comment-' + comment.id}" class="form-label small fw-semibold">Reply</label>
+                    <textarea th:id="${'reply-comment-' + comment.id}" name="content"
+                              class="form-control form-control-sm js-comment-textarea"
+                              rows="2"
+                              th:maxlength="${T(il.ac.jmc.matchday.dto.CommentForm).CONTENT_MAX}"></textarea>
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="collapse"
+                                th:attr="data-bs-target=${'#reply-form-' + comment.id}, aria-controls=${'reply-form-' + comment.id}">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-reply-fill me-1"></i>Reply
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <th:block th:replace="~{shared/comment-ui :: ownerEditForm(${comment}, ${match.id}, null)}"></th:block>
+        </article>
+        <div th:if="${!item.replies.isEmpty()}" class="ms-4 mt-2 vstack gap-2">
+            <th:block th:replace="~{shared/comment-ui :: commentItems(${item.replies})}"></th:block>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="commentAuthorName(user)">
+    <span th:text="${user.blocked ? 'blocked user' : user.username}">user</span>
+</th:block>
+
+<th:block th:fragment="ownerActionButtons(comment, matchId, returnUrl)">
+    <button th:if="${currentUsername == comment.user.username and userBlockedFromComments != true}"
+            type="button" class="btn btn-sm btn-outline-success"
+            data-bs-toggle="collapse"
+            th:attr="data-bs-target=${'#edit-form-' + comment.id}, aria-controls=${'edit-form-' + comment.id}">
+        <i class="bi bi-pencil-fill me-1"></i>Edit
+    </button>
+    <form th:if="${currentUsername == comment.user.username}"
+          th:id="${'delete-comment-form-' + comment.id}"
+          th:action="@{/comments/{id}/delete(id=${comment.id})}" method="post" class="mb-0">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="matchId" th:value="${matchId}"/>
+        <input th:if="${returnUrl != null}" type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+        <button type="button" class="btn btn-sm btn-outline-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#confirmSubmitModal"
+                th:attr="data-confirm-form=${'delete-comment-form-' + comment.id}"
+                data-confirm-title="Delete Comment"
+                data-confirm-message="Delete this comment?"
+                data-confirm-label="Delete"
+                data-confirm-button-class="btn-danger"
+                data-confirm-icon="bi bi-trash-fill text-danger me-2"
+                data-confirm-button-icon="bi bi-trash-fill me-1">
+            <i class="bi bi-trash-fill me-1"></i>Delete
+        </button>
+    </form>
+</th:block>
+
+<th:block th:fragment="ownerEditForm(comment, matchId, returnUrl)">
+    <div th:if="${currentUsername == comment.user.username and userBlockedFromComments != true and !comment.deleted}"
+         th:id="${'edit-form-' + comment.id}"
+         class="collapse mt-3 border-top pt-2">
+        <form th:action="@{/comments/{id}/edit(id=${comment.id})}" method="post" class="mb-0">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="matchId" th:value="${matchId}"/>
+            <input th:if="${returnUrl != null}" type="hidden" name="returnUrl" th:value="${returnUrl}"/>
+            <label th:for="${'edit-comment-' + comment.id}" class="form-label small fw-semibold">Edit comment</label>
+            <textarea th:id="${'edit-comment-' + comment.id}" name="content"
+                      class="form-control form-control-sm js-comment-textarea"
+                      rows="2"
+                      th:maxlength="${T(il.ac.jmc.matchday.dto.CommentForm).CONTENT_MAX}"
+                      th:text="${comment.content}">Comment content</textarea>
+            <div class="d-flex justify-content-end gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="collapse"
+                        th:attr="data-bs-target=${'#edit-form-' + comment.id}, aria-controls=${'edit-form-' + comment.id}">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-check2 me-1"></i>Save
+                </button>
+            </div>
+        </form>
+    </div>
+</th:block>
+
+</body>
+</html>

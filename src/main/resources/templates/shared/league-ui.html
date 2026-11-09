@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- LEAGUE LOGO fragment
+     Shows the league's logo image if available, falls back to a trophy icon.
+     size:      pixel dimension for width and height
+     iconClass: extra Bootstrap icon classes for the fallback icon, e.g. '' or 'fs-1'
+     Usage: th:replace="~{shared/league-ui :: leagueLogo(${league}, 32, '')}"
+            th:replace="~{shared/league-ui :: leagueLogo(${league}, 56, 'fs-1')}" -->
+<th:block th:fragment="leagueLogo(league, size, iconClass)">
+    <img th:if="${league.logoUrl != null and !#strings.isEmpty(league.logoUrl)}"
+         th:src="${league.logoUrl}"
+         th:alt="${league.name + ' logo'}"
+         th:style="'width:' + ${size} + 'px; height:' + ${size} + 'px; object-fit:contain;'"
+         class="rounded"/>
+    <i th:unless="${league.logoUrl != null and !#strings.isEmpty(league.logoUrl)}"
+       th:class="'bi bi-trophy-fill text-warning ' + ${iconClass}"></i>
+</th:block>
+
+</body>
+</html>

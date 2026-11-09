@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Leagues')}">
+    <title>Leagues</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Leagues</h2>
+    </div>
+
+    <th:block th:with="action=@{/leagues}"
+              th:replace="~{shared/forms :: nameSearchBar(${action}, ${searchQuery}, 'col-sm-8 col-md-6')}"></th:block>
+
+    <div id="searchResults" th:fragment="results">
+        <p th:if="${searchQuery != null and !#strings.isEmpty(searchQuery) and !leagues.isEmpty()}"
+           class="text-muted small">
+            Showing <strong th:text="${leagues.totalElements}">0</strong> result(s) for
+            "<span th:text="${searchQuery}"></span>"
+        </p>
+
+        <div th:if="${leagues.isEmpty()}" class="alert alert-info">
+            No leagues found.
+        </div>
+
+        <div th:unless="${leagues.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th>League</th>
+                    <th>Description</th>
+                    <th class="text-end"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="league : ${leagues}">
+                    <td class="fw-semibold">
+                        <a th:href="@{/leagues/{id}(id=${league.id}, returnUrl=${returnUrl})}"
+                           class="text-decoration-none d-inline-flex align-items-center gap-2">
+                            <th:block th:replace="~{shared/league-ui :: leagueLogo(${league}, 32, '')}"></th:block>
+                            <span th:text="${league.name}">League</span>
+                        </a>
+                    </td>
+                    <td class="text-muted"
+                        th:text="${league.description != null and !#strings.isEmpty(league.description) ? league.description : 'No description'}">
+                        Description
+                    </td>
+                    <td class="text-end">
+                        <a th:href="@{/leagues/{id}(id=${league.id}, returnUrl=${returnUrl})}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-eye me-1"></i>View
+                        </a>
+                        <a th:href="@{/leagues/{id}/table(id=${league.id}, returnUrl=${returnUrl})}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-table me-1"></i>Table
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <th:block th:replace="~{shared/pagination :: pagination(${leagues}, @{/leagues(name=${searchQuery})})}"></th:block>
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+<script th:src="@{/js/search.js}"></script>
+</body>
+</html>

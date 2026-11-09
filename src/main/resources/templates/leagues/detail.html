@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head(${league.name})}">
+    <title>League</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="${backUrl}">Leagues</a></li>
+            <li class="breadcrumb-item active" th:text="${league.name}">League</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-4 flex-wrap">
+        <div class="d-flex align-items-center gap-3">
+            <th:block th:replace="~{shared/league-ui :: leagueLogo(${league}, 56, 'fs-1')}"></th:block>
+            <div>
+                <h2 class="mb-1" th:text="${league.name}">League</h2>
+                <p class="text-muted mb-0"
+                   th:if="${league.description != null and !#strings.isEmpty(league.description)}"
+                   th:text="${league.description}">
+                    Description
+                </p>
+            </div>
+        </div>
+        <a th:href="@{/leagues/{id}/table(id=${league.id}, returnUrl=${backUrl})}" class="btn btn-warning">
+            <i class="bi bi-table me-1"></i>View Table
+        </a>
+    </div>
+
+    <section class="mb-5">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+            <h3 class="h5 mb-0"><i class="bi bi-table text-danger me-2"></i>Top Table</h3>
+            <a th:href="@{/leagues/{id}/table(id=${league.id}, returnUrl=${backUrl})}" class="btn btn-sm btn-outline-secondary">Full Table</a>
+        </div>
+        <div th:if="${rows.isEmpty()}" class="alert alert-info">No teams in this league yet.</div>
+        <div th:unless="${rows.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th class="text-center" style="width:56px">#</th>
+                    <th>Team</th>
+                    <th class="text-center">P</th>
+                    <th class="text-center">GD</th>
+                    <th class="text-center">Pts</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row, iter : ${rows}">
+                    <td class="text-center text-muted" th:text="${iter.index + 1}">1</td>
+                    <td class="fw-semibold">
+                        <th:block th:replace="~{shared/team-ui :: teamLink(${row.team()}, 28, false)}"></th:block>
+                    </td>
+                    <td class="text-center" th:text="${row.stats().played()}">0</td>
+                    <td class="text-center" th:text="${row.stats().goalDifference()}">0</td>
+                    <td class="text-center fw-bold" th:text="${row.stats().points()}">0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="mb-5">
+        <h3 class="h5 mb-2"><i class="bi bi-shield-fill text-success me-2"></i>Teams</h3>
+        <div th:if="${teams.isEmpty()}" class="alert alert-info">No teams assigned to this league yet.</div>
+        <div th:unless="${teams.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                <th:block th:replace="~{shared/team-ui :: teamTableHead(false, true, true)}"></th:block>
+                </thead>
+                <tbody>
+                <th:block th:each="team : ${teams}">
+                    <th:block th:replace="~{shared/team-ui :: teamTableRow(${team}, false, true, true, ${favoriteTeamIds}, ${returnUrl}, 'outline-warning')}"></th:block>
+                </th:block>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <section class="col-lg-6">
+            <h3 class="h5 mb-2"><i class="bi bi-calendar3 text-warning me-2"></i>Upcoming Matches</h3>
+            <div th:if="${upcomingMatches.isEmpty()}" class="alert alert-info">No scheduled matches.</div>
+            <div th:unless="${upcomingMatches.isEmpty()}" class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                    <th:block th:replace="~{shared/match-ui :: leagueMatchTableHead}"></th:block>
+                    </thead>
+                    <tbody>
+                    <th:block th:each="match : ${upcomingMatches}">
+                        <th:block th:replace="~{shared/match-ui :: leagueMatchTableRow(${match})}"></th:block>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="col-lg-6">
+            <h3 class="h5 mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Recent Results</h3>
+            <div th:if="${recentResults.isEmpty()}" class="alert alert-info">No completed matches.</div>
+            <div th:unless="${recentResults.isEmpty()}" class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                    <th:block th:replace="~{shared/match-ui :: leagueMatchTableHead}"></th:block>
+                    </thead>
+                    <tbody>
+                    <th:block th:each="match : ${recentResults}">
+                        <th:block th:replace="~{shared/match-ui :: leagueMatchTableRow(${match})}"></th:block>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+</body>
+</html>

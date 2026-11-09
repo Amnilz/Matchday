@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Profile')}">
+    <title>Profile</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-4 flex-wrap">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-person-fill text-success me-2"></i>Profile</h2>
+            <div class="text-muted" th:text="${user.email}">user@example.com</div>
+        </div>
+        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-2"
+              th:text="${user.username}">username</span>
+    </div>
+
+    <div th:replace="~{shared/alerts :: flashAlert('success', ${successMessage})}"></div>
+
+    <section class="mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h5 mb-0">
+                <i class="bi bi-star-fill text-warning me-2"></i>Favorite Teams
+                <span class="badge bg-secondary ms-2" th:text="${favoriteTeams.size()}">0</span>
+            </h3>
+            <a th:href="@{/teams}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-shield-fill me-1"></i>Teams
+            </a>
+        </div>
+
+        <div th:if="${favoriteTeams.isEmpty()}" class="alert alert-info mb-0">
+            No favorite teams yet.
+        </div>
+
+        <div th:unless="${favoriteTeams.isEmpty()}" class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <th:block th:replace="~{shared/team-ui :: teamTableHead(false, false, true)}"></th:block>
+                </thead>
+                <tbody>
+                    <th:block th:each="team : ${favoriteTeams}">
+                        <th:block th:replace="~{shared/team-ui :: teamTableRow(${team}, false, false, true, ${favoriteTeamIds}, ${returnUrl}, 'outline-success')}"></th:block>
+                    </th:block>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="row g-3">
+        <section class="col-md-4">
+            <h3 class="h6">
+                <i class="bi bi-clock-history me-1"></i>Recent Teams
+                <span class="badge bg-secondary ms-1" th:text="${recentTeams.size()}">0</span>
+            </h3>
+            <div th:if="${recentTeams.isEmpty()}" class="text-muted small">No recent teams.</div>
+            <div th:unless="${recentTeams.isEmpty()}" class="list-group list-group-flush border rounded">
+                <a th:each="item : ${recentTeams}" th:href="${item.url}"
+                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-2">
+                    <span th:text="${item.label}">Team</span>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+            </div>
+        </section>
+
+        <section class="col-md-4">
+            <h3 class="h6">
+                <i class="bi bi-calendar3 me-1"></i>Recent Matches
+                <span class="badge bg-secondary ms-1" th:text="${recentMatches.size()}">0</span>
+            </h3>
+            <div th:if="${recentMatches.isEmpty()}" class="text-muted small">No recent matches.</div>
+            <div th:unless="${recentMatches.isEmpty()}" class="list-group list-group-flush border rounded">
+                <a th:each="item : ${recentMatches}" th:href="${item.url}"
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <span th:text="${item.label}">Match</span>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </div>
+                    <div th:if="${item.subtitle != null}" class="small text-muted"
+                         th:text="${item.subtitle}">date</div>
+                </a>
+            </div>
+        </section>
+
+        <section class="col-md-4">
+            <h3 class="h6">
+                <i class="bi bi-search me-1"></i>Recent Searches
+                <span class="badge bg-secondary ms-1" th:text="${recentSearches.size()}">0</span>
+            </h3>
+            <div th:if="${recentSearches.isEmpty()}" class="text-muted small">No recent searches.</div>
+            <th:block th:unless="${recentSearches.isEmpty()}"
+                      th:replace="~{shared/search-ui :: recentSearchList(${recentSearches}, ${returnUrl}, true)}"></th:block>
+        </section>
+    </div>
+
+    <section class="mt-4">
+        <h3 class="h5 mb-3">
+            <i class="bi bi-chat-left-text-fill text-success me-2"></i>My Comments
+            <span class="badge bg-secondary ms-2" th:text="${userComments.size()}">0</span>
+        </h3>
+
+        <div th:if="${userComments.isEmpty()}" class="alert alert-info mb-0">
+            No comments yet.
+        </div>
+
+        <div th:unless="${userComments.isEmpty()}" class="vstack gap-2">
+            <article th:each="comment : ${userComments}"
+                     th:id="${'profile-comment-' + comment.id}"
+                     th:with="commentReturnUrl=${'/profile#profile-comment-' + comment.id}"
+                     class="border rounded p-3 bg-light">
+                <div class="d-flex justify-content-between gap-2 flex-wrap mb-2">
+                    <a th:href="@{/matches/{id}(id=${comment.match.id})}"
+                       class="fw-semibold text-decoration-none">
+                        <span th:text="${comment.match.homeTeam.name}">Home</span>
+                        <span> vs </span>
+                        <span th:text="${comment.match.awayTeam.name}">Away</span>
+                    </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <span th:if="${comment.parentComment != null}" class="badge bg-success-subtle text-success-emphasis">
+                            Reply to
+                            <th:block th:replace="~{shared/comment-ui :: commentAuthorName(${comment.parentComment.user})}"></th:block>
+                        </span>
+                        <span th:if="${!comment.visible}" class="badge bg-secondary">Hidden</span>
+                        <time class="text-muted small"
+                              th:text="${#temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm')}">date</time>
+                    </div>
+                </div>
+                <p class="mb-0" th:text="${comment.content}">Comment content</p>
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                    <th:block th:replace="~{shared/comment-ui :: ownerActionButtons(${comment}, ${comment.match.id}, ${commentReturnUrl})}"></th:block>
+                </div>
+                <th:block th:replace="~{shared/comment-ui :: ownerEditForm(${comment}, ${comment.match.id}, ${commentReturnUrl})}"></th:block>
+            </article>
+        </div>
+    </section>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+</body>
+</html>

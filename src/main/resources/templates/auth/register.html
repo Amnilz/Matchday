@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Register')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<div th:replace="~{layout/fragments :: header}"></div>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-5 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <div class="card card-static shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h5 mb-0"><i class="bi bi-person-plus-fill me-2"></i>Create Account</h2>
+                </div>
+                <div class="card-body">
+
+                    <form th:action="@{/register}" th:object="${form}" method="post">
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                Username
+                                <th:block th:replace="~{shared/forms :: infoTooltip(${usernameMin} + '–' + ${usernameMax} + ' chars. Start with a letter. Only a-z, A-Z, 0-9, \'-\', \'_\'.')}"></th:block>
+                            </label>
+                            <input type="text" id="username" th:field="*{username}"
+                                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'"
+                                   class="form-control" autocomplete="off" required
+                                   th:minlength="${usernameMin}" th:maxlength="${usernameMax}"/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:text="${#fields.errors('username')[0]}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" th:field="*{email}"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
+                                   class="form-control" required
+                                   th:maxlength="${emailMax}"/>
+                            <div class="invalid-feedback" th:errors="*{email}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Password
+                                <th:block th:replace="~{shared/forms :: infoTooltip('Minimum ' + ${passwordMin} + ' characters.')}"></th:block>
+                            </label>
+                            <div class="password-wrapper" th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
+                                <input type="password" id="password" th:field="*{password}"
+                                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                       class="form-control" required
+                                       th:minlength="${passwordMin}" th:maxlength="${passwordMax}"/>
+                                <th:block th:replace="~{shared/forms :: passwordToggle('password')}"></th:block>
+                            </div>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:text="${#fields.errors('password')[0]}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <div class="password-wrapper" th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'">
+                                <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
+                                       th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'"
+                                       class="form-control" required
+                                       th:minlength="${passwordMin}" th:maxlength="${passwordMax}"/>
+                                <th:block th:replace="~{shared/forms :: passwordToggle('confirmPassword')}"></th:block>
+                            </div>
+                            <div class="invalid-feedback" th:errors="*{confirmPassword}"></div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Register</button>
+                        </div>
+
+                    </form>
+
+                </div>
+                <div class="card-footer text-center text-muted small">
+                    Already have an account? <a th:href="@{/login}">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<div th:replace="~{layout/fragments :: scripts}"></div>
+<script th:src="@{/js/show-password.js}"></script>
+<script th:src="@{/js/register.js}"></script>
+</body>
+</html>

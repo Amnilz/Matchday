@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' - ' + ${appName}">Matchday</title>
+    <link rel="icon" type="image/png" th:href="@{/images/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+
+<!-- HEADER fragment: includes a navigation spinner that JS shows only for slow page changes. -->
+<th:block th:fragment="header">
+    <div id="page-spinner" aria-hidden="true">
+        <i class="bi bi-arrow-repeat spinner-icon text-success"></i>
+        <span class="text-muted fw-semibold">Loading...</span>
+    </div>
+    <header class="app-header text-white py-3">
+        <div class="container d-flex align-items-center justify-content-between">
+            <a th:href="@{/}" class="text-white text-decoration-none">
+                <h1 class="h4 mb-0 d-flex align-items-center gap-2">
+                    <img th:src="@{/images/favicon.png}" alt="Matchday" style="width:32px;height:32px;border-radius:7px;"/>
+                    <span th:text="${appName}">Matchday</span>
+                </h1>
+            </a>
+            <div class="d-flex gap-2 align-items-center">
+                <a sec:authorize="!isAuthenticated()" th:href="@{/login(returnUrl=${loginReturnUrl})}" class="btn btn-outline-light btn-sm">Login</a>
+                <a sec:authorize="!isAuthenticated()" th:href="@{/register}" class="btn btn-warning btn-sm">Register</a>
+                <a sec:authorize="isAuthenticated()" th:href="@{/profile}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-person-fill me-1"></i>
+                    <span sec:authentication="name">User</span>
+                </a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline mb-0">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+                </form>
+                <a sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/admin}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-gear-fill me-1"></i>Admin
+                </a>
+            </div>
+        </div>
+    </header>
+</th:block>
+
+<!-- NAV fragment -->
+<nav th:fragment="nav" class="navbar navbar-expand-lg navbar-dark app-nav">
+    <div class="container">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/teams}"><i class="bi bi-shield-fill me-1"></i>Teams</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/leagues}"><i class="bi bi-trophy-fill me-1"></i>Leagues</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/players}"><i class="bi bi-person-fill me-1"></i>Players</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/matches}"><i class="bi bi-calendar3 me-1"></i>Matches</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/league-table}"><i class="bi bi-table me-1"></i>Table</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/search}"><i class="bi bi-search me-1"></i>Search</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONFIRM SUBMIT MODAL — included once globally via the footer fragment -->
+<div th:fragment="confirmSubmitModal"
+     class="modal fade" id="confirmSubmitModal" tabindex="-1"
+     aria-labelledby="confirmSubmitModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmSubmitModalTitle">
+                    <i data-confirm-icon class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    <span data-confirm-title>Confirm action</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" data-confirm-message>Are you sure you want to continue?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" data-confirm-submit>
+                    <i data-confirm-button-icon class="bi bi-check2 me-1"></i>
+                    <span data-confirm-label>Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER fragment — also renders the global confirm modal -->
+<th:block th:fragment="footer">
+    <th:block th:replace="~{layout/fragments :: confirmSubmitModal}"></th:block>
+    <footer class="app-header text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small><span th:text="${appName}">Matchday</span> &copy; <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy')}">2026</span></small>
+        </div>
+    </footer>
+</th:block>
+
+<!-- SCRIPTS fragment -->
+<th:block th:fragment="scripts">
+    <script th:src="@{/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/spinner.js}"></script>
+    <script th:src="@{/js/dropdown-search.js}"></script>
+    <script th:src="@{/js/confirm-submit.js}"></script>
+</th:block>
+
+</html>

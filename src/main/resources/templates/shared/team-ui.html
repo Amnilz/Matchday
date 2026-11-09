@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+
+<!-- TEAM LOGO fragment
+     Usage: th:replace="~{shared/team-ui :: teamLogo(${team}, 40)}"
+     size: pixel size for the img / fallback icon -->
+<span th:fragment="teamLogo(team, size)"
+      th:with="hasLogo=${team.logoUrl != null and !#strings.isEmpty(team.logoUrl)}">
+    <img th:if="${hasLogo}"
+         th:src="${team.logoUrl}" th:alt="${team.name}"
+         class="rounded"
+         th:style="'width:' + ${size} + 'px; height:' + ${size} + 'px; object-fit:contain; object-position:center;'"/>
+    <i th:unless="${hasLogo}"
+       class="bi bi-shield-fill text-success"
+       th:style="'font-size:' + ${size * 0.025} + 'rem;'"></i>
+</span>
+
+<!-- TEAM LINK fragment
+     Usage: th:replace="~{shared/team-ui :: teamLink(${team}, 24, false)}"
+     Renders the logo only when a logo URL exists, then the linked team name. -->
+<a th:fragment="teamLink(team, size, compact)"
+   th:href="${returnUrl != null} ? @{/teams/{id}(id=${team.id}, returnUrl=${returnUrl})} : @{/teams/{id}(id=${team.id})}"
+   class="team-link text-decoration-none d-inline-flex align-items-center gap-2"
+   th:with="hasLogo=${team.logoUrl != null and !#strings.isEmpty(team.logoUrl)}">
+    <img th:if="${hasLogo}"
+         th:src="${team.logoUrl}"
+         th:alt="${team.name} + ' logo'"
+         class="team-link-logo rounded"
+         loading="lazy"
+         th:style="'width:' + ${size} + 'px; height:' + ${size} + 'px;'"/>
+    <span class="team-link-name"
+          th:classappend="${compact == true and hasLogo} ? 'd-none d-md-inline' : ''"
+          th:text="${team.name}">Team</span>
+</a>
+
+<!-- TEAM LOGO OR NAME fragment
+     Usage: th:replace="~{shared/team-ui :: teamLogoOrName(${team}, 64)}"
+     Shows only the logo when one exists, otherwise the team name. -->
+<span th:fragment="teamLogoOrName(team, size)"
+      th:with="hasLogo=${team.logoUrl != null and !#strings.isEmpty(team.logoUrl)}">
+    <img th:if="${hasLogo}"
+         th:src="${team.logoUrl}"
+         th:alt="${team.name} + ' logo'"
+         class="rounded"
+         loading="lazy"
+         th:style="'width:' + ${size} + 'px; height:' + ${size} + 'px; object-fit:contain; object-position:center;'"/>
+    <span th:unless="${hasLogo}" th:text="${team.name}">Team</span>
+</span>
+
+<!-- TEAM LOGO OR NAME LINK fragment
+     Usage: th:replace="~{shared/team-ui :: teamLogoOrNameLink(${team}, 24)}" -->
+<a th:fragment="teamLogoOrNameLink(team, size)"
+   th:href="${returnUrl != null} ? @{/teams/{id}(id=${team.id}, returnUrl=${returnUrl})} : @{/teams/{id}(id=${team.id})}"
+   class="text-decoration-none"
+   th:title="${team.name}">
+    <th:block th:replace="~{shared/team-ui :: teamLogoOrName(${team}, ${size})}"></th:block>
+</a>
+
+
+<!-- TEAM FILTER BAR fragment
+     Name search + league checkbox dropdown + clear button (debounced live search).
+     colClass: Bootstrap column class for the search input width
+     Usage: th:with="action=@{/teams}"
+            th:replace="~{shared/team-ui :: teamFilterBar(${action}, ${searchQuery}, ${leagues}, ${selectedLeagueIds}, 'col-sm-8 col-md-6', 'team-league')}" -->
+<form th:fragment="teamFilterBar(action, searchQuery, leagues, selectedLeagueIds, colClass, idPrefix)"
+      th:action="${action}" method="get" class="row g-2 mb-4 align-items-center">
+    <div th:class="${colClass}">
+        <label for="name-search" class="visually-hidden">Search</label>
+        <input type="text" id="name-search" name="name" class="form-control"
+               placeholder="Search teams..."
+               th:value="${searchQuery}"
+               autocomplete="off"
+               data-debounce-search
+               data-search-target="#searchResults"/>
+    </div>
+    <th:block th:replace="~{shared/forms :: entityCheckboxDropdown('leagueId', 'Leagues', ${leagues}, ${selectedLeagueIds}, ${idPrefix})}"></th:block>
+    <div class="col-auto">
+        <button type="button" id="clearBtn"
+                class="btn btn-outline-secondary"
+                th:classappend="${(searchQuery == null or #strings.isEmpty(searchQuery)) and selectedLeagueIds.isEmpty()} ? 'd-none' : ''">
+            Clear
+        </button>
+    </div>
+</form>
+
+<!-- TEAM CHECKBOX DROPDOWN fragment
+     Form control for filtering by team. Used inside player and match filter bars.
+     Usage: th:replace="~{shared/team-ui :: teamCheckboxDropdown('Teams', ${teams}, ${selectedTeamIds}, 'team')}" -->
+<div th:fragment="teamCheckboxDropdown(label, teams, selectedIds, idPrefix)" class="col-auto">
+    <div class="dropdown">
+        <button type="button"
+                class="btn btn-outline-secondary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                data-counter-for="teamId">
+            <span th:text="${label}">Teams</span><span data-counter-text
+                                                       th:text="${selectedIds.isEmpty() ? '' : ' (' + selectedIds.size() + ')'}"></span>
+        </button>
+        <div class="dropdown-menu p-2" style="min-width:180px">
+            <input type="search"
+                   class="form-control form-control-sm mb-2"
+                   th:placeholder="${'Search ' + label + '...'}"
+                   autocomplete="off"
+                   data-dropdown-search/>
+            <div th:each="team : ${teams}" class="form-check" data-dropdown-option>
+                <input class="form-check-input" type="checkbox"
+                       name="teamId"
+                       th:value="${team.id}"
+                       th:id="${idPrefix + '-' + team.id}"
+                       th:checked="${selectedIds.contains(team.id)}"
+                       data-auto-submit/>
+                <label class="form-check-label"
+                       th:for="${idPrefix + '-' + team.id}"
+                       th:text="${team.name}">Team</label>
+            </div>
+            <div class="text-muted small d-none" data-dropdown-empty>No matching teams.</div>
+        </div>
+    </div>
+</div>
+
+<!-- TEAM TABLE HEAD fragment
+     Usage: th:replace="~{shared/team-ui :: teamTableHead(true, false, true)}" -->
+<tr th:fragment="teamTableHead(showPlayerCount, showDescription, showActions)">
+    <th>Team</th>
+    <th th:if="${showPlayerCount}" class="text-center">Players</th>
+    <th th:if="${showDescription}">Description</th>
+    <th th:if="${showActions}"></th>
+</tr>
+
+<!-- TEAM TABLE ROW fragment
+     Usage: th:replace="~{shared/team-ui :: teamTableRow(${team}, true, false, true, ${favoriteTeamIds}, ${returnUrl}, 'outline-success')}" -->
+<tr th:fragment="teamTableRow(team, showPlayerCount, showDescription, allowFavorite, favoriteTeamIds, returnUrl, viewButtonStyle)"
+    th:id="${'team-' + team.id}">
+    <td class="fw-semibold">
+        <th:block th:replace="~{shared/team-ui :: teamLink(${team}, 32, false)}"></th:block>
+    </td>
+    <td th:if="${showPlayerCount}" class="text-center">
+        <span class="badge bg-secondary" th:text="${team.playerCount}">0</span>
+    </td>
+    <td th:if="${showDescription}" class="text-muted"
+        th:text="${team.description != null and !#strings.isEmpty(team.description) ? team.description : 'No description'}">
+        Description
+    </td>
+    <td class="text-end">
+        <div class="d-inline-flex gap-1">
+            <th:block th:if="${allowFavorite}"
+                      th:with="anchoredReturnUrl=${returnUrl + '#team-' + team.id}">
+                <form sec:authorize="isAuthenticated()"
+                      th:if="${!favoriteTeamIds.contains(team.id)}"
+                      th:action="@{/favorites/teams/{id}(id=${team.id})}" method="post" class="mb-0">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="returnUrl" th:value="${anchoredReturnUrl}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                            title="Add favorite"
+                            th:attr="aria-label=${'Add ' + team.name + ' to favorites'}">
+                        <i class="bi bi-star"></i>
+                    </button>
+                </form>
+                <form sec:authorize="isAuthenticated()"
+                      th:if="${favoriteTeamIds.contains(team.id)}"
+                      th:action="@{/favorites/teams/{id}/remove(id=${team.id})}" method="post" class="mb-0">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="returnUrl" th:value="${anchoredReturnUrl}"/>
+                    <button type="submit" class="btn btn-sm btn-warning"
+                            title="Remove favorite"
+                            th:attr="aria-label=${'Remove ' + team.name + ' from favorites'}">
+                        <i class="bi bi-star-fill"></i>
+                    </button>
+                </form>
+                <a sec:authorize="!isAuthenticated()" th:href="@{/login(returnUrl=${loginReturnUrl})}"
+                   class="btn btn-sm btn-outline-warning"
+                   title="Login to favorite"
+                   th:attr="aria-label=${'Login to favorite ' + team.name}">
+                    <i class="bi bi-star"></i>
+                </a>
+            </th:block>
+            <a th:href="${returnUrl != null} ? @{/teams/{id}(id=${team.id}, returnUrl=${returnUrl})} : @{/teams/{id}(id=${team.id})}"
+               th:class="${'btn btn-sm btn-' + viewButtonStyle}">
+                <i class="bi bi-eye me-1"></i>View
+            </a>
+        </div>
+    </td>
+</tr>
+
+</html>

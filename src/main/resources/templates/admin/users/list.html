@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Manage Users')}">
+    <title>Manage Users</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<th:block th:replace="~{layout/fragments :: header}"></th:block>
+<nav th:replace="~{layout/fragments :: nav}"></nav>
+
+<main class="container my-4 flex-grow-1">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/admin}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h2 class="mb-0"><i class="bi bi-people-fill text-danger me-2"></i>Manage Users</h2>
+        </div>
+    </div>
+
+    <th:block th:replace="~{admin/fragments :: adminSectionNav('users')}"></th:block>
+
+    <th:block th:replace="~{admin/fragments :: flashMessages}"></th:block>
+
+    <div th:if="${users.isEmpty()}" class="alert alert-info">
+        No users yet.
+    </div>
+
+    <div th:unless="${users.isEmpty()}" class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>User</th>
+                    <th class="d-none d-md-table-cell">Email</th>
+                    <th class="d-none d-md-table-cell">Roles</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-nowrap d-none d-md-table-cell">Joined</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="user : ${users}" th:id="${'user-' + user.id}">
+                    <td>
+                        <div class="fw-semibold" th:text="${user.username}">username</div>
+                        <div th:if="${currentUsername == user.username}" class="small text-muted">Current admin</div>
+                    </td>
+                    <td class="d-none d-md-table-cell" th:text="${user.email}">user@example.com</td>
+                    <td class="d-none d-md-table-cell">
+                        <span th:each="role : ${user.roles}"
+                              class="badge bg-secondary me-1"
+                              th:text="${#strings.replace(role, 'ROLE_', '')}">USER</span>
+                    </td>
+                    <td class="text-center">
+                        <span th:if="${user.blocked}" class="badge bg-danger">Blocked</span>
+                        <span th:unless="${user.blocked}" class="badge bg-success">Active</span>
+                    </td>
+                    <td class="text-nowrap text-muted small d-none d-md-table-cell"
+                        th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">date</td>
+                    <td class="text-end">
+                        <form th:if="${!user.blocked and currentUsername != user.username and !user.roles.contains(adminRole)}"
+                              th:id="${'block-user-form-' + user.id}"
+                              th:action="@{/admin/users/{id}/block(id=${user.id})}"
+                              method="post" class="mb-0 d-inline">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="page" th:value="${users.number}"/>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmSubmitModal"
+                                    th:attr="data-confirm-form=${'block-user-form-' + user.id},
+                                             data-confirm-message=${'Block ' + user.username + ' from commenting?'}"
+                                    data-confirm-title="Block User"
+                                    data-confirm-label="Block"
+                                    data-confirm-button-class="btn-danger"
+                                    data-confirm-icon="bi bi-person-x-fill text-danger me-2"
+                                    data-confirm-button-icon="bi bi-person-x me-1">
+                                <i class="bi bi-person-x me-1"></i>Block
+                            </button>
+                        </form>
+                        <form th:if="${user.blocked}"
+                              th:id="${'unblock-user-form-' + user.id}"
+                              th:action="@{/admin/users/{id}/unblock(id=${user.id})}"
+                              method="post" class="mb-0 d-inline">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="page" th:value="${users.number}"/>
+                            <button type="button" class="btn btn-sm btn-outline-success"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmSubmitModal"
+                                    th:attr="data-confirm-form=${'unblock-user-form-' + user.id},
+                                             data-confirm-message=${'Unblock ' + user.username + '?'}"
+                                    data-confirm-title="Unblock User"
+                                    data-confirm-label="Unblock"
+                                    data-confirm-button-class="btn-success"
+                                    data-confirm-icon="bi bi-person-check-fill text-success me-2"
+                                    data-confirm-button-icon="bi bi-person-check me-1">
+                                <i class="bi bi-person-check me-1"></i>Unblock
+                            </button>
+                        </form>
+                        <span th:if="${!user.blocked and (currentUsername == user.username or user.roles.contains(adminRole))}"
+                              class="text-muted small">No action</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <th:block th:replace="~{shared/pagination :: pagination(${users}, @{/admin/users})}"></th:block>
+
+</main>
+
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<th:block th:replace="~{layout/fragments :: scripts}"></th:block>
+</body>
+</html>
